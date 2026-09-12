@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using Oculus.Interaction;
 using Oculus.Interaction.HandGrab;
@@ -18,6 +19,20 @@ public class AssemblyGuide : MonoBehaviour
     {
         public string title;
         public string[] partNames;
+
+        /// <summary>Full instruction prose. Comes from the backend when available.</summary>
+        [TextArea] public string detail;
+    }
+
+    /// <summary>
+    /// Maps a backend <c>slot_id</c> onto the child GameObject that represents it. The backend
+    /// names slots by their role in the assembly; our mesh children are named by build order.
+    /// </summary>
+    [Serializable]
+    public class SlotBinding
+    {
+        public string slotId;
+        public string partName;
     }
 
     enum Phase
@@ -27,12 +42,33 @@ public class AssemblyGuide : MonoBehaviour
         Complete
     }
 
+    [Header("Backend")]
+    [SerializeField] string serverUrl = "http://10.50.19.61:8000";
+    [SerializeField] string instructionId = "assembly-1";
+    [SerializeField] float instructionTimeoutSeconds = 6f;
+
+    [Space]
+    [SerializeField]
+    SlotBinding[] slotBindings =
+    {
+        new SlotBinding { slotId = "bottom_left", partName = "Cup 01" },
+        new SlotBinding { slotId = "bottom_center", partName = "Cup 02" },
+        new SlotBinding { slotId = "bottom_right", partName = "Cup 03" },
+        new SlotBinding { slotId = "middle_left", partName = "Cup 04" },
+        new SlotBinding { slotId = "middle_right", partName = "Cup 05" },
+        new SlotBinding { slotId = "top_center", partName = "Cup 06" },
+    };
+
+    /// <summary>Fallback used when the backend is unreachable; replaced by the fetched document.</summary>
     [SerializeField]
     InstructionStep[] steps =
     {
-        new InstructionStep { title = "Bottom row", partNames = new[] { "Cup 01", "Cup 02", "Cup 03" } },
-        new InstructionStep { title = "Middle row", partNames = new[] { "Cup 04", "Cup 05" } },
-        new InstructionStep { title = "Top cup", partNames = new[] { "Cup 06" } },
+        new InstructionStep { title = "Bottom row", partNames = new[] { "Cup 01", "Cup 02", "Cup 03" },
+            detail = "Place three bottom cups with openings facing down on the table." },
+        new InstructionStep { title = "Middle row", partNames = new[] { "Cup 04", "Cup 05" },
+            detail = "Add two cups with openings facing up, each bridging adjacent bottom cups." },
+        new InstructionStep { title = "Top cup", partNames = new[] { "Cup 06" },
+            detail = "Add one top cup with its opening facing down, bridging both middle cups." },
     };
 
     [SerializeField] Vector2 doneButtonSize = new Vector2(0.078f, 0.034f);
@@ -67,6 +103,8 @@ public class AssemblyGuide : MonoBehaviour
     WorldButton _backButton;
     WorldButton _forwardButton;
     ProgressHud _hud;
+    InfoPanel _instructionPanel;
+    string _sourceLabel = "local";
 
     Grabbable _grabbable;
     AnchorOnRelease _anchor;
@@ -82,14 +120,101 @@ public class AssemblyGuide : MonoBehaviour
         _anchor = GetComponent<AnchorOnRelease>();
         _handGrabs = GetComponentsInChildren<HandGrabInteractable>(true);
 
+        _hud = ProgressHud.Create();
+        _hud.SetProgress(0f, "Loading instructions...");
+
+        StartCoroutine(Boot());
+    }
+
+    /// <summary>
+    /// Pulls the instruction document before building anything, since the steps determine how
+    /// many parts and buttons exist. Falls back to the serialized copy if the server is down.
+    /// </summary>
+    IEnumerator Boot()
+    {
+        yield return AssemblyBackend.GetInstruction(
+            serverUrl,
+            instructionId,
+            instructionTimeoutSeconds,
+            ApplyDocument,
+            error =>
+            {
+                _sourceLabel = "local fallback";
+                Debug.LogWarning($"[AssemblyGuide] Could not load '{instructionId}' from {serverUrl} " +
+                                 $"({error}). Using the built-in steps.");
+            });
+
         CollectParts();
         BuildButtons();
-
-        _hud = ProgressHud.Create();
 
         _phase = Phase.Placing;
         SetGrabEnabled(true);
         Refresh();
+    }
+
+    /// <summary>
+    /// Rebuilds the step list from a backend document. The document's per-step
+    /// <c>required_slot_ids</c> is cumulative, so the parts a step actually introduces come
+    /// from the objects list instead, where each object names the step that introduces it.
+    /// </summary>
+    void ApplyDocument(AssemblyDocumentDto document)
+    {
+        var bindings = new Dictionary<string, string>();
+        foreach (var binding in slotBindings)
+        {
+            if (binding != null && !string.IsNullOrEmpty(binding.slotId))
+                bindings[binding.slotId] = binding.partName;
+        }
+
+        var ordered = new List<AssemblyStepDto>(document.steps);
+        ordered.Sort((a, b) => a.step_index.CompareTo(b.step_index));
+
+        var built = new List<InstructionStep>();
+        var unmapped = new List<string>();
+
+        foreach (var step in ordered)
+        {
+            var partNames = new List<string>();
+            foreach (var obj in document.objects)
+            {
+                if (obj == null || obj.step_index != step.step_index)
+                    continue;
+
+                if (bindings.TryGetValue(obj.slot_id, out var partName) && !string.IsNullOrEmpty(partName))
+                    partNames.Add(partName);
+                else
+                    unmapped.Add(obj.slot_id);
+            }
+
+            if (partNames.Count == 0)
+                continue;
+
+            built.Add(new InstructionStep
+            {
+                title = $"Step {step.step_index + 1}",
+                partNames = partNames.ToArray(),
+                detail = step.instructions,
+            });
+        }
+
+        if (unmapped.Count > 0)
+        {
+            Debug.LogWarning($"[AssemblyGuide] {unmapped.Count} slot(s) in '{document.instruction_id}' have no " +
+                             $"binding to a child object and were skipped: {string.Join(", ", unmapped)}");
+        }
+
+        if (built.Count == 0)
+        {
+            _sourceLabel = "local fallback";
+            Debug.LogWarning($"[AssemblyGuide] '{document.instruction_id}' produced no usable steps. " +
+                             "Using the built-in steps.");
+            return;
+        }
+
+        steps = built.ToArray();
+        _sourceLabel = $"{document.instruction_id} v{document.version}";
+        Debug.Log($"[AssemblyGuide] Loaded '{document.name}' ({_sourceLabel}) from {serverUrl}: " +
+                  $"{steps.Length} step(s), {document.objects.Length} object(s).");
     }
 
     void CollectParts()
@@ -180,6 +305,12 @@ public class AssemblyGuide : MonoBehaviour
         _forwardButton.transform.localPosition = new Vector3(navX, below, forward);
         _forwardButton.Clicked += SkipForward;
         _forwardButton.SetVisible(false);
+
+        // Sits clear of the tower's left edge (-0.15) and the leftmost part button (-0.138).
+        _instructionPanel = InfoPanel.Create(
+            "Instruction Panel", transform, new Vector2(0.24f, 0.15f), new Color(0.05f, 0.07f, 0.11f));
+        _instructionPanel.transform.localPosition = new Vector3(-0.30f, _towerTop * 0.6f, forward);
+        _instructionPanel.SetVisible(false);
     }
 
     /// <summary>Applies every visual from the current state. The only place visuals are set.</summary>
@@ -242,6 +373,24 @@ public class AssemblyGuide : MonoBehaviour
 
         _backButton.SetVisible(_phase == Phase.Complete || (_phase == Phase.Assembling && _stepIndex > 0));
         _forwardButton.SetVisible(_phase == Phase.Assembling && _stepIndex < LastStep);
+
+        if (_phase == Phase.Assembling)
+        {
+            var step = steps[_stepIndex];
+            _instructionPanel.SetText(
+                $"Step {_stepIndex + 1} of {steps.Length}",
+                string.IsNullOrEmpty(step.detail) ? step.title : step.detail);
+            _instructionPanel.SetVisible(true);
+        }
+        else if (_phase == Phase.Complete)
+        {
+            _instructionPanel.SetText("Complete", "All instructions finished.");
+            _instructionPanel.SetVisible(true);
+        }
+        else
+        {
+            _instructionPanel.SetVisible(false);
+        }
 
         Report();
     }
@@ -361,7 +510,7 @@ public class AssemblyGuide : MonoBehaviour
             case Phase.Assembling:
                 _hud.SetProgress(
                     total == 0 ? 0f : done / (float)total,
-                    $"Step {_stepIndex + 1}/{steps.Length}  {steps[_stepIndex].title}  {doneInCurrentStep}/{inCurrentStep}");
+                    $"Step {_stepIndex + 1}/{steps.Length}   {doneInCurrentStep}/{inCurrentStep} placed");
                 break;
             case Phase.Complete:
                 _hud.SetProgress(1f, "Assembly complete");
