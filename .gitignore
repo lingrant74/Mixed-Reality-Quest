@@ -1,0 +1,18 @@
+# Unity
+QuestClient/Library/
+QuestClient/Temp/
+QuestClient/Obj/
+QuestClient/Logs/
+QuestClient/UserSettings/
+QuestClient/MemoryCaptures/
+QuestClient/*.csproj
+QuestClient/*.sln
+QuestClient/*.slnx
+QuestClient/.vs/
+QuestClient-create.log
+QuestClient-mcp-import.log
+QuestClient-urp-bootstrap.log
+
+# OS
+.DS_Store
+Thumbs.db
