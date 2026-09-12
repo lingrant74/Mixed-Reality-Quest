@@ -34,13 +34,14 @@ public class AssemblyGuide : MonoBehaviour
         new InstructionStep { title = "Top cup", partNames = new[] { "Cup 06" } },
     };
 
-    [SerializeField] Vector2 doneButtonSize = new Vector2(0.062f, 0.028f);
-    [SerializeField] Vector2 wideButtonSize = new Vector2(0.19f, 0.055f);
+    [SerializeField] Vector2 doneButtonSize = new Vector2(0.078f, 0.034f);
+    [SerializeField] Vector2 wideButtonSize = new Vector2(0.21f, 0.058f);
     [SerializeField] float buttonForwardOffset = 0.11f;
 
     class Part
     {
         public string Name;
+        public int StepIndex;
         public Renderer Renderer;
         public Vector3 LocalCenter;
         public WorldButton DoneButton;
@@ -80,8 +81,9 @@ public class AssemblyGuide : MonoBehaviour
     {
         var localTop = 0f;
 
-        foreach (var step in steps)
+        for (var stepIndex = 0; stepIndex < steps.Length; stepIndex++)
         {
+            var step = steps[stepIndex];
             if (step?.partNames == null)
                 continue;
 
@@ -105,6 +107,7 @@ public class AssemblyGuide : MonoBehaviour
                 _parts.Add(new Part
                 {
                     Name = name,
+                    StepIndex = stepIndex,
                     Renderer = renderer,
                     LocalCenter = localCenter,
                 });
@@ -197,12 +200,27 @@ public class AssemblyGuide : MonoBehaviour
 
         foreach (var part in _parts)
         {
-            var inStep = IsInStep(part, index);
-            part.IsDone = false;
-            Show(part, inStep);
-            if (inStep)
+            if (part.StepIndex < index)
+            {
+                // Finished instructions stay on screen in green as a record of the build.
+                part.IsDone = true;
+                Show(part, true);
+                Paint(part, HologramMaterials.StepComplete);
+                part.DoneButton.SetVisible(false);
+            }
+            else if (part.StepIndex == index)
+            {
+                part.IsDone = false;
+                Show(part, true);
                 Paint(part, HologramMaterials.Pending);
-            part.DoneButton.SetVisible(inStep);
+                part.DoneButton.SetVisible(true);
+            }
+            else
+            {
+                part.IsDone = false;
+                Show(part, false);
+                part.DoneButton.SetVisible(false);
+            }
         }
 
         _nextButton.SetVisible(false);
@@ -239,19 +257,16 @@ public class AssemblyGuide : MonoBehaviour
         if (_phase != Phase.Assembling || !IsStepComplete(_stepIndex))
             return;
 
-        // Finished steps stay hidden so only the current instruction is on screen.
-        foreach (var part in _parts)
-        {
-            if (IsInStep(part, _stepIndex))
-            {
-                Show(part, false);
-                part.DoneButton.SetVisible(false);
-            }
-        }
-
         if (_stepIndex + 1 >= steps.Length)
         {
             _phase = Phase.Complete;
+            foreach (var part in _parts)
+            {
+                Show(part, true);
+                Paint(part, HologramMaterials.StepComplete);
+                part.DoneButton.SetVisible(false);
+            }
+
             _nextButton.SetVisible(false);
             Report();
             return;
@@ -260,22 +275,9 @@ public class AssemblyGuide : MonoBehaviour
         EnterStep(_stepIndex + 1);
     }
 
-    bool IsInStep(Part part, int index)
+    static bool IsInStep(Part part, int index)
     {
-        if (index < 0 || index >= steps.Length)
-            return false;
-
-        var names = steps[index].partNames;
-        if (names == null)
-            return false;
-
-        foreach (var name in names)
-        {
-            if (name == part.Name)
-                return true;
-        }
-
-        return false;
+        return part.StepIndex == index;
     }
 
     bool IsStepComplete(int index)
@@ -301,13 +303,10 @@ public class AssemblyGuide : MonoBehaviour
 
         var total = _parts.Count;
         var completed = 0;
-        for (var i = 0; i < _stepIndex; i++)
+        foreach (var part in _parts)
         {
-            foreach (var part in _parts)
-            {
-                if (IsInStep(part, i))
-                    completed++;
-            }
+            if (part.StepIndex < _stepIndex)
+                completed++;
         }
 
         var inCurrentStep = 0;
@@ -325,13 +324,13 @@ public class AssemblyGuide : MonoBehaviour
         switch (_phase)
         {
             case Phase.Placing:
-                _hud.SetProgress(0f, "Position the hologram, then press LOCK IN PLACE");
+                _hud.SetProgress(0f, "Place the hologram, then LOCK");
                 break;
             case Phase.Assembling:
                 completed += doneInCurrentStep;
                 _hud.SetProgress(
                     total == 0 ? 0f : completed / (float)total,
-                    $"Step {_stepIndex + 1} of {steps.Length} — {steps[_stepIndex].title}   ({doneInCurrentStep}/{inCurrentStep} cups)");
+                    $"Step {_stepIndex + 1}/{steps.Length}  {steps[_stepIndex].title}  {doneInCurrentStep}/{inCurrentStep}");
                 break;
             case Phase.Complete:
                 _hud.SetProgress(1f, "Assembly complete");

@@ -20,7 +20,7 @@ public static class HologramMaterials
         get
         {
             if (_pending == null)
-                _pending = Ghost(new Color(0.30f, 0.68f, 1f, 0.10f), new Color(0.55f, 0.85f, 1f), 0.45f);
+                _pending = Ghost(new Color(0.30f, 0.68f, 1f, 0.055f), new Color(0.55f, 0.85f, 1f), 0.32f);
             return _pending;
         }
     }
@@ -31,7 +31,7 @@ public static class HologramMaterials
         get
         {
             if (_done == null)
-                _done = Ghost(new Color(1f, 0.48f, 0.05f, 0.34f), new Color(1f, 0.75f, 0.35f), 0.8f);
+                _done = Ghost(new Color(1f, 0.48f, 0.05f, 0.20f), new Color(1f, 0.75f, 0.35f), 0.55f);
             return _done;
         }
     }
@@ -42,7 +42,7 @@ public static class HologramMaterials
         get
         {
             if (_stepComplete == null)
-                _stepComplete = Ghost(new Color(0.15f, 0.95f, 0.42f, 0.34f), new Color(0.6f, 1f, 0.75f), 0.8f);
+                _stepComplete = Ghost(new Color(0.15f, 0.95f, 0.42f, 0.16f), new Color(0.6f, 1f, 0.75f), 0.5f);
             return _stepComplete;
         }
     }

@@ -192,10 +192,10 @@ public static class CupTowerSetup
         }
 
         material.shader = shader;
-        material.SetColor("_BaseColor", new Color(0.30f, 0.68f, 1f, 0.10f));
+        material.SetColor("_BaseColor", new Color(0.30f, 0.68f, 1f, 0.055f));
         material.SetColor("_RimColor", new Color(0.55f, 0.85f, 1f, 1f));
         material.SetFloat("_RimPower", 2.5f);
-        material.SetFloat("_RimStrength", 0.45f);
+        material.SetFloat("_RimStrength", 0.32f);
         EditorUtility.SetDirty(material);
         return material;
     }

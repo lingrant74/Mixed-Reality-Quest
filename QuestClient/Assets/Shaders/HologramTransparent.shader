@@ -2,10 +2,10 @@ Shader "AssemblyGuide/HologramTransparent"
 {
     Properties
     {
-        _BaseColor ("Base Color", Color) = (0.30, 0.68, 1, 0.10)
+        _BaseColor ("Base Color", Color) = (0.30, 0.68, 1, 0.055)
         _RimColor ("Rim Color", Color) = (0.55, 0.85, 1, 1)
         _RimPower ("Rim Power", Range(0.5, 8)) = 2.5
-        _RimStrength ("Rim Strength", Range(0, 2)) = 0.45
+        _RimStrength ("Rim Strength", Range(0, 2)) = 0.32
     }
 
     SubShader

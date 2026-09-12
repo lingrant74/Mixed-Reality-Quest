@@ -20,6 +20,7 @@ public class WorldButton : MonoBehaviour
     Color _hoverColor;
     bool _faceCamera;
     bool _clickPending;
+    Vector2 _size;
 
     /// <summary>
     /// Creates a button. The root is built inactive so the Interaction SDK components can be
@@ -50,6 +51,8 @@ public class WorldButton : MonoBehaviour
 
     void Build(string label, Vector2 size)
     {
+        _size = size;
+
         var collider = gameObject.AddComponent<BoxCollider>();
         collider.size = new Vector3(size.x, size.y, 0.02f);
         // ColliderSurface raycasts the collider directly, so keeping it a trigger keeps these
@@ -84,11 +87,37 @@ public class WorldButton : MonoBehaviour
         _label = text.AddComponent<TextMeshPro>();
         _label.text = label;
         _label.alignment = TextAlignmentOptions.Center;
-        _label.enableAutoSizing = true;
-        _label.fontSizeMin = 0.05f;
-        _label.fontSizeMax = 1.2f;
+        _label.enableAutoSizing = false;
+        _label.textWrappingMode = TextWrappingModes.NoWrap;
         _label.color = Color.white;
-        _label.rectTransform.sizeDelta = new Vector2(size.x * 0.92f, size.y * 0.8f);
+        _label.rectTransform.sizeDelta = new Vector2(size.x, size.y);
+    }
+
+    void Start()
+    {
+        FitLabel();
+    }
+
+    /// <summary>
+    /// TMP's auto-sizing does not reliably clamp to a rect this small, so measure the glyph
+    /// bounds at a known font size and scale to whichever of width or height binds first.
+    /// </summary>
+    void FitLabel()
+    {
+        if (_label == null || string.IsNullOrEmpty(_label.text))
+            return;
+
+        _label.fontSize = 1f;
+        _label.ForceMeshUpdate(true, true);
+
+        var bounds = _label.textBounds.size;
+        if (bounds.x <= 0.0001f || bounds.y <= 0.0001f)
+            return;
+
+        var byWidth = _size.x * 0.82f / bounds.x;
+        var byHeight = _size.y * 0.46f / bounds.y;
+        _label.fontSize = Mathf.Min(byWidth, byHeight);
+        _label.ForceMeshUpdate(true, true);
     }
 
     void Update()
@@ -136,8 +165,11 @@ public class WorldButton : MonoBehaviour
 
     public void SetLabel(string label)
     {
-        if (_label != null)
-            _label.text = label;
+        if (_label == null)
+            return;
+
+        _label.text = label;
+        FitLabel();
     }
 
     public void SetVisible(bool visible)
