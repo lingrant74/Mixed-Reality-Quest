@@ -23,6 +23,10 @@ ROOT = Path(__file__).resolve().parents[2]
 FILES = Path(os.getenv('DASHBOARD_ASSET_DIR', str(ROOT/'work/dashboard-assets'))).resolve()
 MAX_GLB = 50*1024*1024
 MAX_IMAGE = 8*1024*1024
+MAX_SOURCE = 300*1024*1024
+# Manufacturer source-CAD archive formats accepted as the authoritative asset.
+# Add new extensions here without touching the instruction/manifest schema.
+SOURCE_CAD_FORMATS = {'f3z': 'fusion360_archive', 'f3d': 'fusion360_design'}
 router = APIRouter()
 upload_lock = asyncio.Semaphore(2)
 
@@ -111,7 +115,15 @@ def save_product(pid:str, body:SaveRequest):
     p=product(pid);check_revision(p,body.revision)
     check_image_url(body.draft.thumbnail_url)
     for step in body.draft.steps: check_image_url(step.target_image_url)
-    return change(p,{'draft':body.draft.model_dump()})
+    new_draft=body.draft.model_dump()
+    fields={'draft':new_draft}
+    if p.get('demo_pending_mapping') and new_draft['steps']!=p['draft']['steps']:
+        # The manufacturer actually edited the still-unmapped hardcoded demo
+        # steps; stop auto-completing the mapping on a later GLB upload so a
+        # real edit is never silently overwritten. An unchanged resave (e.g.
+        # the app's own save-before-upload) leaves the pending flag alone.
+        fields['demo_pending_mapping']=False
+    return change(p,fields)
 
 
 def validate_glb(data):
@@ -153,9 +165,20 @@ def validate_glb(data):
     return parts
 
 
-def store_upload(data, kind):
+def source_format(filename):
+    formats=', '.join('.'+f for f in sorted(SOURCE_CAD_FORMATS))
+    if not filename or '/' in filename or '\\' in filename or len(filename)>200:
+        fail(f'Upload a supported CAD source file ({formats}).')
+    fmt=Path(filename).suffix.lower().lstrip('.')
+    if fmt not in SOURCE_CAD_FORMATS: fail(f'Upload a supported CAD source file ({formats}).')
+    return fmt
+
+
+def store_upload(data, kind, filename=None):
     if kind=='model':
         parts=validate_glb(data); ext='.glb';mime='model/gltf-binary'
+    elif kind=='source':
+        parts=[]; ext='.'+source_format(filename); mime='application/octet-stream'
     else:
         try:
             with warnings.catch_warnings():
@@ -165,17 +188,17 @@ def store_upload(data, kind):
                     im.load();out=BytesIO();im.convert('RGB').save(out,format='PNG');data=out.getvalue()
         except (OSError,ValueError,Image.DecompressionBombWarning,Image.DecompressionBombError): fail('Invalid or corrupt JPEG/PNG image.')
         parts=[];ext='.png';mime='image/png'
-    filename=uuid.uuid4().hex+ext
-    path=FILES/filename
+    stored_name=uuid.uuid4().hex+ext
+    path=FILES/stored_name
     try:
         FILES.mkdir(parents=True,exist_ok=True)
         path.write_bytes(data)
     except OSError:
         fail('Local file storage is unavailable. Check disk space and permissions.',503)
-    try: db().assets.insert_one({'_id':filename,'kind':kind,'mime':mime,'bytes':len(data)})
+    try: db().assets.insert_one({'_id':stored_name,'kind':kind,'mime':mime,'bytes':len(data),'original_filename':filename})
     except Exception:
         path.unlink(missing_ok=True);raise
-    return {'url':'/assets/'+filename,'parts':parts}
+    return {'url':'/assets/'+stored_name,'parts':parts,'filename':filename}
 
 
 async def read_upload(request, limit):
@@ -195,32 +218,109 @@ async def upload_image(request:Request):
         return await run_in_threadpool(store_upload,data,'image')
 
 
-def attach_model(pid,revision,data):
+# Hardcoded MVP demo: a real Fusion parser is not implemented yet. Uploading a
+# .f3z/.f3d always regenerates this fixed six-cup sequence into the draft, so the
+# rest of the dashboard/manifest/viewer/publish pipeline has real steps to work
+# with. Swap this one function out for an actual Fusion/CAD parser later without
+# touching anything else.
+HARDCODED_CUP_STEPS = [
+    ('Place the first red cup upright on the assembly surface.','up'),
+    ('Place the second red cup upside down on top of the first cup.','down'),
+    ('Place the third red cup upright on top of the second cup.','up'),
+    ('Place the fourth red cup upside down on top of the third cup.','down'),
+    ('Place the fifth red cup upright on top of the fourth cup.','up'),
+    ('Place the sixth red cup upside down on top of the fifth cup.','down'),
+]
+
+
+def generate_hardcoded_fusion_instructions(model):
+    """Placeholder for real Fusion parsing. Always emits the fixed six-cup demo
+    sequence; only fills in real GLB part IDs when exactly six parts are
+    currently detected (never guesses a mapping otherwise)."""
+    parts=(model or {}).get('parts') or []
+    mapped=len(parts)==6
+    version=model['version'] if (mapped and model) else None
+    steps=[]
+    for i,(text,direction) in enumerate(HARDCODED_CUP_STEPS):
+        steps.append({'instructions':text,'orientation':f'Opening {direction}.','opening_direction':direction,
+            'part_ids':[parts[i]['id']] if mapped else [],
+            'supporting_part_ids':[parts[j]['id'] for j in range(i)] if mapped else [],
+            'target_image_url':None,'model_version':version})
+    return steps,mapped
+
+
+def attach_model(pid,revision,data,filename=None):
     p=product(pid);check_revision(p,revision)
-    asset=store_upload(data,'model');version=uuid.uuid4().hex
-    model={'version':version,'url':asset['url'],'parts':[{'id':f'part_{version}_{x["node_index"]}',**x} for x in asset['parts']]}
-    return change(p,{'model':model})
+    asset=store_upload(data,'model',filename);version=uuid.uuid4().hex
+    old=p['model'] or {}
+    model={**old,'version':version,'url':asset['url'],'filename':filename,
+           'parts':[{'id':f'part_{version}_{x["node_index"]}',**x} for x in asset['parts']]}
+    fields={'model':model}
+    if p.get('demo_pending_mapping'):
+        # The draft still holds the unmapped hardcoded demo steps from an earlier
+        # Fusion-file-first upload; try to complete that mapping now, but only
+        # ever from this specific pending state, never overwriting a manufacturer's
+        # own edits made after the initial generation.
+        steps,mapped=generate_hardcoded_fusion_instructions(model)
+        fields['draft']={**p['draft'],'steps':steps}
+        fields['demo_pending_mapping']=not mapped
+    return change(p,fields)
 
 
 @router.post('/dashboard/api/products/{pid}/model')
-async def upload_model(pid:str,revision:int,request:Request):
+async def upload_model(pid:str,revision:int,request:Request,filename:str|None=None):
     async with upload_lock:
         data=await read_upload(request,MAX_GLB)
-        return await run_in_threadpool(attach_model,pid,revision,data)
+        return await run_in_threadpool(attach_model,pid,revision,data,filename)
+
+
+def attach_source(pid,revision,data,filename):
+    p=product(pid);check_revision(p,revision)
+    fmt=source_format(filename)
+    asset=store_upload(data,'source',filename);version=uuid.uuid4().hex
+    old=p['model'] or {}
+    model={**old,'version':version,'source':{'url':asset['url'],'filename':filename,'format':fmt}}
+    steps,mapped=generate_hardcoded_fusion_instructions(model)
+    draft={**p['draft'],'steps':steps}
+    return change(p,{'model':model,'draft':draft,'demo_pending_mapping':not mapped})
+
+
+@router.post('/dashboard/api/products/{pid}/source')
+async def upload_source(pid:str,revision:int,filename:str,request:Request):
+    async with upload_lock:
+        data=await read_upload(request,MAX_SOURCE)
+        return await run_in_threadpool(attach_source,pid,revision,data,filename)
 
 
 @router.get('/assets/{filename}')
 def asset_file(filename:str):
-    if not re.fullmatch(r'[a-f0-9]{32}\.(glb|png)',filename): fail('Asset not found',404)
+    extensions='|'.join(['glb','png',*SOURCE_CAD_FORMATS])
+    if not re.fullmatch(rf'[a-f0-9]{{32}}\.({extensions})',filename): fail('Asset not found',404)
     asset=db().assets.find_one({'_id':filename})
     path=FILES/filename
     if asset is None or not path.is_file(): fail('Asset not found',404)
-    return FileResponse(path,media_type=asset['mime'],headers={'X-Content-Type-Options':'nosniff'})
+    return FileResponse(path,media_type=asset['mime'],filename=asset.get('original_filename'),
+                         headers={'X-Content-Type-Options':'nosniff'})
+
+
+def build_manifest(product_id, d, model):
+    """The source-CAD/render/parts/instruction manifest, independent of the Unity schema."""
+    source=model['source']
+    instructions=[{'instruction_id':f'step_{i+1:03d}','step':i+1,'text':s.instructions,
+        'parts':s.part_ids,'requires_parts':s.supporting_part_ids,
+        'orientation':{'opening_direction':s.opening_direction,'guidance':s.orientation}} for i,s in enumerate(d.steps)]
+    return {'schema_version':1,'product_id':product_id,'model_version':model['version'],
+        'assets':{
+            'source_cad':{'filename':source['filename'],'type':SOURCE_CAD_FORMATS.get(source['format'],f"cad_{source['format']}")},
+            'render_model':{'filename':model.get('filename') or 'model.glb','type':'glb'}},
+        'parts':[{'part_id':x['id'],'name':x['name'],'model_node_id':str(x['node_index'])} for x in model['parts']],
+        'instructions':instructions}
 
 
 def compile_instruction(p):
     d=Draft.model_validate(p['draft']); model=p['model']
-    if not d.name or not d.description or not model or not d.steps: fail('Add a name, description, GLB model and at least one complete step before publishing.')
+    if not d.name or not d.description or not model or not model.get('source') or not d.steps:
+        fail('Add a name, description, GLB model, source CAD file, and at least one complete step before publishing.')
     parts={x['id'] for x in model['parts']};used=set();objects=[];steps=[]
     for i,s in enumerate(d.steps):
         if not s.instructions or not s.orientation or not s.opening_direction or not s.part_ids:
@@ -238,16 +338,17 @@ def compile_instruction(p):
         used.update(s.part_ids)
         steps.append({'step_index':i,'instructions':text,'required_slot_ids':[o['slot_id'] for o in objects],'target_image_path':s.target_image_url})
     try:
-        return AssemblyDocument.model_validate({'instruction_id':'product_'+p['_id'],'version':p['published_version']+1,
+        instruction=AssemblyDocument.model_validate({'instruction_id':'product_'+p['_id'],'version':p['published_version']+1,
             'name':d.name,'description':d.description,'objects':objects,'steps':steps}).model_dump()
     except ValidationError: fail('Instructions do not satisfy the Unity schema. Check steps and supports.')
+    return instruction, build_manifest(p['_id'], d, model)
 
 
 @router.post('/dashboard/api/products/{pid}/publish')
 def publish(pid:str,body:Revision):
     p=product(pid);check_revision(p,body.revision)
-    instruction=compile_instruction(p)
-    return change(p,{'published':{'instruction':instruction,'model':p['model'],'published_at':now()},
+    instruction,manifest=compile_instruction(p)
+    return change(p,{'published':{'instruction':instruction,'manifest':manifest,'model':p['model'],'published_at':now()},
                      'published_version':instruction['version'],'published_revision':p['revision']+1})
 
 
@@ -258,9 +359,24 @@ def published_document(p, request):
     return raw
 
 
+def find_published(instruction_id):
+    if not instruction_id.startswith('product_'): return None
+    return db().products.find_one({'_id':instruction_id.removeprefix('product_'),'published':{'$ne':None}})
+
+
 @router.get('/instructions/{instruction_id}/assets')
 def published_assets(instruction_id:str,request:Request):
-    p=db().products.find_one({'_id':instruction_id.removeprefix('product_'),'published':{'$ne':None}}) if instruction_id.startswith('product_') else None
+    p=find_published(instruction_id)
     if p is None: fail('Published product not found',404)
-    return {'instruction_id':instruction_id,'version':p['published_version'],'model':{**p['published']['model'],
-        'url':str(request.base_url).rstrip('/')+p['published']['model']['url']}}
+    model=p['published']['model'];base=str(request.base_url).rstrip('/');source=model.get('source')
+    return {'instruction_id':instruction_id,'version':p['published_version'],
+        'model':{'version':model['version'],'url':base+model['url'],'parts':model['parts']},
+        'source_asset':{'filename':source['filename'],'url':base+source['url'],'format':source['format']} if source else None,
+        'render_asset':{'filename':model.get('filename'),'url':base+model['url'],'format':'glb'}}
+
+
+@router.get('/instructions/{instruction_id}/manifest')
+def published_manifest(instruction_id:str):
+    p=find_published(instruction_id)
+    if p is None or 'manifest' not in p['published']: fail('Published manifest not found',404)
+    return p['published']['manifest']

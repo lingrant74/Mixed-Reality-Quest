@@ -1,10 +1,17 @@
 {
   "draft_hidden": true,
   "invalid_uploads_and_size_rejected": true,
+  "source_asset_stored_and_retrievable": true,
   "save_reload": true,
   "stale_revision_rejected": true,
   "publish_and_http_assets": true,
+  "instructions_manifest_matches_source_render_and_parts": true,
   "invalid_draft_preserves_publication": true,
   "model_replacement_requires_review": true,
-  "seed_and_health_unchanged": true
+  "source_replacement_requires_review": true,
+  "seed_and_health_unchanged": true,
+  "fusion_first_generates_six_unmapped_steps": true,
+  "glb_arriving_after_fusion_auto_maps_six_parts": true,
+  "six_cup_demo_publishes_with_correct_dependencies": true,
+  "wrong_part_count_never_silently_mapped": true
 }
