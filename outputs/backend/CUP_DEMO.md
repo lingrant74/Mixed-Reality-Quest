@@ -5,6 +5,15 @@ Ollama. No cloud calls or retraining. The correct finished reference is stored
 in `cup_photos/reference.png`; the user confirmed it is Photo 3. The reference remains stored but is not read or sent during observation extraction.
 Only the current snapshot is shown to the model.
 
+## Current base PNG fixture
+
+When the backend runs with `ASSIST_MODE=mock`, every valid PNG currently returns
+the fixed message **“The right cup on the second row is upside down.”** The
+response highlights `cup_5` and includes a `flipped` issue at `middle_right`.
+This proves the PNG request, JSON response, message display, and hologram-ID
+path. It does not analyze the pixels. The structured issue contract also reserves
+`misaligned` so real detection can replace this fixture later.
+
 ## Steps
 
 | step_index | Required visible arrangement |
@@ -57,6 +66,7 @@ Illustrative response shape (not a claim that the model passed a particular phot
   "step_index": 2,
   "guidance": "Turn the middle cups so both openings face up.",
   "highlight_piece_ids": [],
+  "issues": [],
   "audio_url": null,
   "mock": false,
   "status": "incorrect",

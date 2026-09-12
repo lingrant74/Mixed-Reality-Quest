@@ -58,11 +58,19 @@ class AssistRequest(BaseModel):
     snapshot: Snapshot
 
 
+class PlacementIssue(BaseModel):
+    piece_id: Literal["cup_1", "cup_2", "cup_3", "cup_4", "cup_5", "cup_6"]
+    location: Literal["bottom_left", "bottom_center", "bottom_right", "middle_left", "middle_right", "top_center"]
+    issue_type: Literal["misaligned", "flipped"]
+    message: str = Field(min_length=1, max_length=220)
+
+
 class AssistResponse(BaseModel):
     request_id: str
     step_index: int
     guidance: str
     highlight_piece_ids: list[str]
+    issues: list[PlacementIssue]
     audio_url: str | None
     mock: bool
     status: Literal["correct", "incorrect", "uncertain"]
@@ -102,12 +110,20 @@ def health() -> dict[str, str]:
 @app.post("/assist", response_model=AssistResponse)
 async def assist(request: AssistRequest) -> AssistResponse:
     await run_in_threadpool(validate_snapshot, request.snapshot)
-    guidance, highlights = "Mock mode: cup placement has not been evaluated.", []
+    guidance, highlights, issues = "Mock mode: cup placement has not been evaluated.", [], []
     status = "uncertain"
     if request.instruction_id != ASSEMBLY["instruction_id"] or request.step_index not in (0, 1, 2):
         raise HTTPException(422, {"code": "assembly_context_mismatch",
             "message": "Use assembly-1 and step_index 0, 1 or 2 for the cup demo",
             "request_id": request.request_id})
+    if settings.mode == "mock" and request.snapshot.mime_type == "image/png":
+        # Fixed first-pass fixture. It proves PNG transport, feedback text and
+        # hologram selection before real placement detection is connected.
+        guidance = "The right cup on the second row is upside down."
+        highlights = ["cup_5"]
+        issues = [PlacementIssue(piece_id="cup_5", location="middle_right",
+            issue_type="flipped", message=guidance)]
+        status = "incorrect"
     if settings.mode == "vision":
         if inference_lock.locked():
             raise HTTPException(503, {"code": "model_busy", "message": "Another local inference request is running",
@@ -125,6 +141,7 @@ async def assist(request: AssistRequest) -> AssistResponse:
         step_index=request.step_index,
         guidance=guidance,
         highlight_piece_ids=highlights,
+        issues=issues,
         audio_url=None,
         mock=settings.mode == "mock",
         status=status,

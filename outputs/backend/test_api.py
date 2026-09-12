@@ -19,6 +19,7 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
             for _ in range(2):
                 response = await self.client.post("/assist", json=self.payload)
                 self.assertEqual(response.json()["status"], "correct")
+                self.assertEqual(response.json()["issues"], [])
                 self.assertFalse(response.json()["advance_step"])
                 self.assertEqual(response.json()["step_index"], 0)
 
@@ -43,7 +44,13 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
         with patch.object(main, "infer", new_callable=AsyncMock) as call:
             response = await self.client.post("/assist", json=self.payload)
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.json()["mock"])
+        data=response.json()
+        self.assertTrue(data["mock"])
+        self.assertEqual(data["status"],"incorrect")
+        self.assertEqual(data["guidance"],"The right cup on the second row is upside down.")
+        self.assertEqual(data["highlight_piece_ids"],["cup_5"])
+        self.assertEqual(data["issues"],[{"piece_id":"cup_5","location":"middle_right",
+            "issue_type":"flipped","message":"The right cup on the second row is upside down."}])
         call.assert_not_called()
 
     async def test_response_contract_and_state(self):
@@ -52,9 +59,10 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
             response = await self.client.post("/assist", json=self.payload)
         self.assertEqual(response.status_code, 200)
         data = response.json()
-        self.assertEqual(set(data), {"request_id", "step_index", "guidance", "highlight_piece_ids", "audio_url", "mock", "status", "advance_step"})
+        self.assertEqual(set(data), {"request_id", "step_index", "guidance", "highlight_piece_ids", "issues", "audio_url", "mock", "status", "advance_step"})
         self.assertEqual((data["request_id"], data["step_index"], data["mock"], data["audio_url"]), ("r", 0, False, None))
         self.assertEqual(data["status"], "uncertain")
+        self.assertEqual(data["issues"], [])
         self.assertFalse(data["advance_step"])
         self.assertEqual(len(call.call_args.args), 2)
         self.assertEqual(call.call_args.args[1], self.payload["snapshot"]["data_base64"])

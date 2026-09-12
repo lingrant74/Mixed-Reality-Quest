@@ -197,19 +197,27 @@ match that type, decode successfully, and fit within 10 MiB and 20 megapixels.
 Invalid payloads/images return HTTP 422. `step_index` is a zero-based,
 integer 0, 1 or 2 for the cup demo. `view_type` is a caller-defined label, such as `headset`.
 
-Successful responses echo `request_id` and `step_index`. This example shows
-explicit `ASSIST_MODE=mock`; real vision responses use deterministic guidance from model observations and
-`mock: false`, with the same fields:
+Successful responses echo `request_id` and `step_index`. For the current base
+integration, `ASSIST_MODE=mock` returns a fixed middle-right flipped-cup result
+for every valid PNG. This exercises the Unity feedback path without analyzing
+the pixels. Real vision responses use model observations and `mock: false`, with
+the same fields:
 
 ```json
 {
   "request_id": "request-1",
   "step_index": 0,
-  "guidance": "Mock mode: cup placement has not been evaluated.",
-  "highlight_piece_ids": [],
+  "guidance": "The right cup on the second row is upside down.",
+  "highlight_piece_ids": ["cup_5"],
+  "issues": [{
+    "piece_id": "cup_5",
+    "location": "middle_right",
+    "issue_type": "flipped",
+    "message": "The right cup on the second row is upside down."
+  }],
   "audio_url": null,
   "mock": true,
-  "status": "uncertain",
+  "status": "incorrect",
   "advance_step": false
 }
 ```

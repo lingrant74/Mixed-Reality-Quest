@@ -1,7 +1,14 @@
 {
   "instruction_id": "assembly-1",
   "title": "Six interchangeable cups",
-  "pieces": [],
+  "pieces": [
+    {"id": "cup_1"},
+    {"id": "cup_2"},
+    {"id": "cup_3"},
+    {"id": "cup_4"},
+    {"id": "cup_5"},
+    {"id": "cup_6"}
+  ],
   "rules": {
     "bottom": "Three cups, openings down, on the table.",
     "middle": "Two cups, openings up, each bridging adjacent bottom cups.",

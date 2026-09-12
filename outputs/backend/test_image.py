@@ -51,7 +51,10 @@ def main():
     assert result["step_index"] == payload["step_index"]
     assert result["mock"] is (args.expect_mode == "mock")
     assembly = json.loads(Path(__file__).with_name("assembly.json").read_text())
-    assert set(result["highlight_piece_ids"]) <= {p["id"] for p in assembly["pieces"]}
+    piece_ids={p["id"] for p in assembly["pieces"]}
+    assert set(result["highlight_piece_ids"]) <= piece_ids
+    assert all(issue["piece_id"] in piece_ids and issue["issue_type"] in {"misaligned","flipped"}
+               for issue in result["issues"])
     assert result["audio_url"] is None
     assert result["status"] in {"correct", "incorrect", "uncertain"}
     assert result["advance_step"] is False

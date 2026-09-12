@@ -47,10 +47,19 @@ public class AssemblyBackendExample : MonoBehaviour
         public int step_index;
         public string guidance;
         public string[] highlight_piece_ids;
+        public PlacementIssue[] issues;
         public string audio_url; // Backend returns JSON null in mock mode.
         public bool mock;
         public string status;
         public bool advance_step; // Temporarily always false; require manual confirmation.
+    }
+
+    [Serializable] public class PlacementIssue
+    {
+        public string piece_id; // cup_1 .. cup_6; map to the matching hologram.
+        public string location;
+        public string issue_type; // "misaligned" or "flipped".
+        public string message;
     }
 
     [Serializable] public class HealthResponse { public string status; }
@@ -160,13 +169,20 @@ public class AssemblyBackendExample : MonoBehaviour
                     AssistResponse response = JsonUtility.FromJson<AssistResponse>(body);
                     if (response == null || response.request_id != payload.request_id ||
                         response.step_index != payload.step_index || response.guidance == null ||
-                        response.highlight_piece_ids == null)
+                        response.highlight_piece_ids == null || response.issues == null)
                         throw new InvalidOperationException("Response fields/identifiers do not match the request contract.");
                     if ((response.status != "correct" && response.status != "incorrect" && response.status != "uncertain") ||
                         response.advance_step)
                         throw new InvalidOperationException("Invalid cup status/advance recommendation.");
+                    foreach (PlacementIssue issue in response.issues)
+                        if (issue == null || string.IsNullOrEmpty(issue.piece_id) ||
+                            string.IsNullOrEmpty(issue.location) ||
+                            (issue.issue_type != "misaligned" && issue.issue_type != "flipped") ||
+                            string.IsNullOrEmpty(issue.message))
+                            throw new InvalidOperationException("Invalid placement issue in backend response.");
                     Debug.Log($"Assist request={response.request_id}, step={response.step_index}, mock={response.mock}, status={response.status}, advance_step={response.advance_step}\n" +
                         $"Guidance: {response.guidance}\nHighlights: [{string.Join(", ", response.highlight_piece_ids)}]\n" +
+                        $"Issues: {string.Join(" | ", Array.ConvertAll(response.issues, issue => issue.location + ": " + issue.issue_type))}\n" +
                         $"Audio URL: {response.audio_url ?? "null"}\nRaw response: {body}", this);
                 }
                 else

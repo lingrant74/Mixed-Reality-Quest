@@ -1,10 +1,14 @@
 # Unity local backend example
 
 The backend now evaluates the six-cup demo. The example DTO also parses
-`status` and `advance_step`; these are logged, not acted on automatically.
+`status`, structured `issues`, hologram highlight IDs, and `advance_step`;
+these are logged, not acted on automatically.
 See `../backend/CUP_DEMO.md` for the current contract and step indices 0–2,
 and `../backend/CUP_OBSERVATION_RESULTS.md` for measured model errors. Require manual
-confirmation: `advance_step` is always false, even for `status: correct`. Mock mode returns uncertain with no advance.
+confirmation: `advance_step` is always false, even for `status: correct`.
+For the current base integration, a valid PNG in mock mode always returns “The
+right cup on the second row is upside down,” with `cup_5` highlighted and a
+`flipped` issue. This is a fixed transport/UI fixture, not image analysis.
 
 1. Copy `AssemblyBackendExample.cs` into your Unity project's `Assets/Scripts`.
    Attach it to one empty GameObject. Uses built-in JsonUtility and UnityWebRequest;
