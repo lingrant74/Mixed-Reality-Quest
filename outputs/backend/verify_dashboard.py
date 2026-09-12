@@ -86,13 +86,13 @@ with httpx.Client(base_url='http://127.0.0.1:8000',timeout=40,trust_env=False) a
 
   # Hardcoded six-cup Fusion demo generator: source arrives first, GLB later.
   p2=call('POST','/dashboard/api/products',201);pid2=p2['_id'];url2='/dashboard/api/products/'+pid2;iid2='product_'+pid2
-  cup_texts=['Place the first red cup upright on the assembly surface.',
-   'Place the second red cup upside down on top of the first cup.',
-   'Place the third red cup upright on top of the second cup.',
-   'Place the fourth red cup upside down on top of the third cup.',
-   'Place the fifth red cup upright on top of the fourth cup.',
-   'Place the sixth red cup upside down on top of the fifth cup.']
-  cup_directions=['up','down','up','down','up','down']
+  cup_texts=['Place the first red cup at the left side of the bottom row.',
+   'Place the second red cup beside the first cup in the center of the bottom row.',
+   'Place the third red cup beside the second cup to complete the bottom row.',
+   'Place the fourth red cup above the gap between the first and second cups.',
+   'Place the fifth red cup above the gap between the second and third cups.',
+   'Place the sixth red cup at the top of the pyramid above the two middle-row cups.']
+  cup_directions=['up']*6
   p2=call('POST',url2+'/source?revision='+str(p2['revision'])+'&filename=Stacked%20Cup%20Assembly.f3z',content=b'fake-cup-assembly-f3z');assets.append(p2['model']['source']['url'])
   assert [s['instructions'] for s in p2['draft']['steps']]==cup_texts
   assert [s['opening_direction'] for s in p2['draft']['steps']]==cup_directions
@@ -103,7 +103,8 @@ with httpx.Client(base_url='http://127.0.0.1:8000',timeout=40,trust_env=False) a
   cup_ids=[x['id'] for x in p2['model']['parts']]
   assert len(cup_ids)==6
   assert [s['part_ids'] for s in p2['draft']['steps']]==[[cid] for cid in cup_ids],'GLB arriving after Fusion must auto-map all six detected parts in order'
-  assert [s['supporting_part_ids'] for s in p2['draft']['steps']]==[cup_ids[:i] for i in range(6)]
+  expected_supports=[[],[],[],cup_ids[:2],cup_ids[1:3],cup_ids[3:5]]
+  assert [s['supporting_part_ids'] for s in p2['draft']['steps']]==expected_supports
   assert all(s['model_version']==p2['model']['version'] for s in p2['draft']['steps'])
   report['glb_arriving_after_fusion_auto_maps_six_parts']=True
   p2['draft']['name']='Stacked Cup Assembly';p2['draft']['description']='Six-cup Fusion demo, hardcoded MVP generator.'
@@ -115,7 +116,7 @@ with httpx.Client(base_url='http://127.0.0.1:8000',timeout=40,trust_env=False) a
   manifest2=call('GET','/instructions/'+iid2+'/manifest')
   assert [x['text'] for x in manifest2['instructions']]==cup_texts
   assert [x['parts'] for x in manifest2['instructions']]==[[cid] for cid in cup_ids]
-  assert [x['requires_parts'] for x in manifest2['instructions']]==[cup_ids[:i] for i in range(6)]
+  assert [x['requires_parts'] for x in manifest2['instructions']]==expected_supports
   report['six_cup_demo_publishes_with_correct_dependencies']=True
 
   # Wrong part count: GLB with the wrong number of parts must never be silently mapped.

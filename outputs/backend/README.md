@@ -84,12 +84,13 @@ Then open **http://127.0.0.1:8000/dashboard** in a browser.
 
    **MVP note:** uploading a source file does not actually parse it. It calls
    `generate_hardcoded_fusion_instructions()` in `dashboard_api.py`, which
-   always emits the same fixed six-cup demo sequence (alternating up/down
-   orientation, cumulative dependencies) into the draft, replacing whatever
-   steps were there. If the current model already has exactly six detected
-   GLB parts, those six parts are mapped onto the six steps in detection
-   order automatically; otherwise every step is left unmapped and flagged
-   for review — the app never invents a mapping for the wrong part count.
+   always emits the same fixed six-cup, 3-2-1 pyramid sequence into the draft,
+   replacing whatever steps were there. All cups are upright; the middle cups
+   depend on their two neighboring bottom cups and the top cup depends on both
+   middle cups. If the current model already has exactly six detected GLB
+   parts, those six parts are mapped onto the six steps in detection order
+   automatically; otherwise every step is left unmapped and flagged for
+   review — the app never invents a mapping for the wrong part count.
    If the GLB is uploaded *after* the source (source-first), the same
    auto-mapping is retried once the GLB arrives, as long as you haven't
    manually edited the generated steps in the meantime. This is a clearly
@@ -101,11 +102,16 @@ Then open **http://127.0.0.1:8000/dashboard** in a browser.
    this project.** The only prior fixture (`dashboard-demo.glb`) has three
    unrelated parts (Foundation/Column/Display cap) and was explicitly a
    temporary stand-in. For testing the six-cup flow, `dashboard-demo-6cup.glb`
-   was built as a synthetic six-node fixture (`Cup_1`..`Cup_6`) — it is not a
-   real Fusion export. Before wiring this up to a real manufacturer asset,
-   re-export the actual Fusion assembly to GLB with all six cup occurrences as
-   separate addressable nodes; if the export has fewer than six, the app will
-   correctly refuse to guess and will flag every step for review instead.
+   was built as a synthetic six-node box fixture (`Cup_1`..`Cup_6`) — it is not
+   a real Fusion export. The dashboard detects that exact fixture and replaces
+   its boxes visually with lightweight procedural red cup meshes in a centered
+   3-2-1 pyramid. The generated cups keep the fixture's six backend part IDs,
+   so the generic step mapping and cumulative visibility code remains in use.
+   Other GLBs, including a future real cup export, render their own geometry.
+   Before wiring this up to a real manufacturer asset, re-export the actual
+   Fusion assembly to GLB with all six cup occurrences as separate addressable
+   nodes; if the export has fewer than six, the app will correctly refuse to
+   guess and will flag every step for review instead.
 4. **Review/edit steps** — instruction text, orientation text, opening
    direction (`up`/`down`, required by the current Unity schema), the parts
    introduced in that step, and optional supporting parts from earlier steps.
@@ -235,7 +241,7 @@ step/part mapping, save, invalid-publish rejection, publish, draft edits after
 publish, a full backend restart, model replacement, blocked republish, and the
 Assembly Viewer's cumulative slider/highlighting/camera-persistence behavior
 all behave as documented above. `dashboard-demo-6cup.glb` is a synthetic
-six-node test fixture built for this verification — **no real six-cup
+six-node box fixture with a demo-only procedural cup visualization — **no real six-cup
 "Stacked Cup Assembly" GLB export exists anywhere in this project**; see the
 note in the dashboard section above.
 

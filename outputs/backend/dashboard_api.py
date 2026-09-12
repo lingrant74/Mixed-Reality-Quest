@@ -224,12 +224,12 @@ async def upload_image(request:Request):
 # with. Swap this one function out for an actual Fusion/CAD parser later without
 # touching anything else.
 HARDCODED_CUP_STEPS = [
-    ('Place the first red cup upright on the assembly surface.','up'),
-    ('Place the second red cup upside down on top of the first cup.','down'),
-    ('Place the third red cup upright on top of the second cup.','up'),
-    ('Place the fourth red cup upside down on top of the third cup.','down'),
-    ('Place the fifth red cup upright on top of the fourth cup.','up'),
-    ('Place the sixth red cup upside down on top of the fifth cup.','down'),
+    ('Place the first red cup at the left side of the bottom row.','up',()),
+    ('Place the second red cup beside the first cup in the center of the bottom row.','up',()),
+    ('Place the third red cup beside the second cup to complete the bottom row.','up',()),
+    ('Place the fourth red cup above the gap between the first and second cups.','up',(0,1)),
+    ('Place the fifth red cup above the gap between the second and third cups.','up',(1,2)),
+    ('Place the sixth red cup at the top of the pyramid above the two middle-row cups.','up',(3,4)),
 ]
 
 
@@ -241,10 +241,10 @@ def generate_hardcoded_fusion_instructions(model):
     mapped=len(parts)==6
     version=model['version'] if (mapped and model) else None
     steps=[]
-    for i,(text,direction) in enumerate(HARDCODED_CUP_STEPS):
+    for i,(text,direction,support_indices) in enumerate(HARDCODED_CUP_STEPS):
         steps.append({'instructions':text,'orientation':f'Opening {direction}.','opening_direction':direction,
             'part_ids':[parts[i]['id']] if mapped else [],
-            'supporting_part_ids':[parts[j]['id'] for j in range(i)] if mapped else [],
+            'supporting_part_ids':[parts[j]['id'] for j in support_indices] if mapped else [],
             'target_image_url':None,'model_version':version})
     return steps,mapped
 
