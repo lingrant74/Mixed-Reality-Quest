@@ -12528,37 +12528,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AssemblyGuide
   serverUrl: http://10.50.19.61:8000
-  instructionId: assembly-1
-  instructionTimeoutSeconds: 6
-  slotBindings:
-  - slotId: bottom_left
-    partName: Cup 01
-  - slotId: bottom_center
-    partName: Cup 02
-  - slotId: bottom_right
-    partName: Cup 03
-  - slotId: middle_left
-    partName: Cup 04
-  - slotId: middle_right
-    partName: Cup 05
-  - slotId: top_center
-    partName: Cup 06
-  steps:
-  - title: Bottom row
-    partNames:
-    - Cup 01
-    - Cup 02
-    - Cup 03
-    detail: Place three bottom cups with openings facing down on the table.
-  - title: Middle row
-    partNames:
-    - Cup 04
-    - Cup 05
-    detail: Add two cups with openings facing up, each bridging adjacent bottom cups.
-  - title: Top cup
-    partNames:
-    - Cup 06
-    detail: Add one top cup with its opening facing down, bridging both middle cups.
+  requestTimeoutSeconds: 6
+  cupMesh: {fileID: -2432090755550338912, guid: e545d2e2cd4c6464391ec5430b9325f0, type: 3}
   doneButtonSize: {x: 0.078, y: 0.034}
   wideButtonSize: {x: 0.21, y: 0.058}
   navButtonSize: {x: 0.1, y: 0.046}

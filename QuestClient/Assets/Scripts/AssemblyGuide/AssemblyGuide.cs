@@ -4,39 +4,30 @@ using System.Collections.Generic;
 using Oculus.Interaction;
 using Oculus.Interaction.HandGrab;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 /// <summary>
-/// Drives the assembly walkthrough. The hologram starts free to move; once the user locks it
-/// down it stays put and the guide reveals one instruction at a time. Every visual is derived
-/// from <see cref="_phase"/>, <see cref="_stepIndex"/> and each part's done flag by
-/// <see cref="Refresh"/>, so navigating backwards or skipping ahead cannot desync the display.
+/// Drives the assembly walkthrough. At startup the user picks an assembly from the backend;
+/// the hologram is then generated from that document, positioned freely, locked to a spatial
+/// anchor, and worked through one instruction at a time.
+/// <para>
+/// Every visual is derived from <see cref="_phase"/>, <see cref="_stepIndex"/> and each part's
+/// done flag by <see cref="Refresh"/>, so navigating backwards or skipping ahead cannot
+/// desync the display.
+/// </para>
 /// </summary>
 [RequireComponent(typeof(Grabbable))]
 public class AssemblyGuide : MonoBehaviour
 {
-    [Serializable]
-    public class InstructionStep
+    class InstructionStep
     {
-        public string title;
-        public string[] partNames;
-
-        /// <summary>Full instruction prose. Comes from the backend when available.</summary>
-        [TextArea] public string detail;
-    }
-
-    /// <summary>
-    /// Maps a backend <c>slot_id</c> onto the child GameObject that represents it. The backend
-    /// names slots by their role in the assembly; our mesh children are named by build order.
-    /// </summary>
-    [Serializable]
-    public class SlotBinding
-    {
-        public string slotId;
-        public string partName;
+        public string Detail;
+        public List<string> SlotIds = new List<string>();
     }
 
     enum Phase
     {
+        Choosing,
         Placing,
         Assembling,
         Complete
@@ -44,33 +35,13 @@ public class AssemblyGuide : MonoBehaviour
 
     [Header("Backend")]
     [SerializeField] string serverUrl = "http://10.50.19.61:8000";
-    [SerializeField] string instructionId = "assembly-1";
-    [SerializeField] float instructionTimeoutSeconds = 6f;
+    [SerializeField] float requestTimeoutSeconds = 6f;
 
-    [Space]
-    [SerializeField]
-    SlotBinding[] slotBindings =
-    {
-        new SlotBinding { slotId = "bottom_left", partName = "Cup 01" },
-        new SlotBinding { slotId = "bottom_center", partName = "Cup 02" },
-        new SlotBinding { slotId = "bottom_right", partName = "Cup 03" },
-        new SlotBinding { slotId = "middle_left", partName = "Cup 04" },
-        new SlotBinding { slotId = "middle_right", partName = "Cup 05" },
-        new SlotBinding { slotId = "top_center", partName = "Cup 06" },
-    };
+    [Header("Geometry")]
+    [Tooltip("Mesh used for parts whose type reads as a cup. Modelled base-at-origin.")]
+    [SerializeField] Mesh cupMesh;
 
-    /// <summary>Fallback used when the backend is unreachable; replaced by the fetched document.</summary>
-    [SerializeField]
-    InstructionStep[] steps =
-    {
-        new InstructionStep { title = "Bottom row", partNames = new[] { "Cup 01", "Cup 02", "Cup 03" },
-            detail = "Place three bottom cups with openings facing down on the table." },
-        new InstructionStep { title = "Middle row", partNames = new[] { "Cup 04", "Cup 05" },
-            detail = "Add two cups with openings facing up, each bridging adjacent bottom cups." },
-        new InstructionStep { title = "Top cup", partNames = new[] { "Cup 06" },
-            detail = "Add one top cup with its opening facing down, bridging both middle cups." },
-    };
-
+    [Header("Layout")]
     [SerializeField] Vector2 doneButtonSize = new Vector2(0.078f, 0.034f);
     [SerializeField] Vector2 wideButtonSize = new Vector2(0.21f, 0.058f);
     [SerializeField] Vector2 navButtonSize = new Vector2(0.10f, 0.046f);
@@ -82,10 +53,14 @@ public class AssemblyGuide : MonoBehaviour
     static readonly Color UndoHover = new Color(1f, 0.55f, 0.12f);
     static readonly Color NavIdle = new Color(0.18f, 0.19f, 0.24f);
     static readonly Color NavHover = new Color(0.45f, 0.50f, 0.60f);
+    static readonly Color PanelBackground = new Color(0.05f, 0.07f, 0.11f);
+
+    const string GeneratedPrefix = "Part ";
 
     class Part
     {
-        public string Name;
+        public string SlotId;
+        public string ObjectType;
         public int StepIndex;
         public Renderer Renderer;
         public Vector3 LocalCenter;
@@ -94,8 +69,9 @@ public class AssemblyGuide : MonoBehaviour
     }
 
     readonly List<Part> _parts = new List<Part>();
+    readonly List<InstructionStep> _steps = new List<InstructionStep>();
 
-    Phase _phase = Phase.Placing;
+    Phase _phase = Phase.Choosing;
     int _stepIndex;
 
     WorldButton _lockButton;
@@ -104,15 +80,20 @@ public class AssemblyGuide : MonoBehaviour
     WorldButton _forwardButton;
     ProgressHud _hud;
     InfoPanel _instructionPanel;
-    string _sourceLabel = "local";
+    InfoPanel _materialsPanel;
 
     Grabbable _grabbable;
     AnchorOnRelease _anchor;
     HandGrabInteractable[] _handGrabs;
 
+    Mesh _boxMesh;
+    float _partHeight = 0.1225f;
+    float _partDiameter = 0.0992f;
     float _towerTop;
+    string _assemblyName = string.Empty;
+    string _sourceLabel = "built-in";
 
-    int LastStep => steps.Length - 1;
+    int LastStep => _steps.Count - 1;
 
     void Start()
     {
@@ -120,31 +101,70 @@ public class AssemblyGuide : MonoBehaviour
         _anchor = GetComponent<AnchorOnRelease>();
         _handGrabs = GetComponentsInChildren<HandGrabInteractable>(true);
 
-        _hud = ProgressHud.Create();
-        _hud.SetProgress(0f, "Loading instructions...");
+        if (cupMesh != null)
+        {
+            var size = cupMesh.bounds.size;
+            _partHeight = size.y;
+            _partDiameter = Mathf.Max(size.x, size.z);
+        }
 
+        // The scene's authored cups are an editor preview only; clear them before the server
+        // round trip so they are not left hanging behind the selection menu.
+        ClearParts();
+
+        _hud = ProgressHud.Create();
+        _hud.SetProgress(0f, "Contacting server...");
+
+        SetGrabEnabled(false);
         StartCoroutine(Boot());
     }
 
     /// <summary>
-    /// Pulls the instruction document before building anything, since the steps determine how
-    /// many parts and buttons exist. Falls back to the serialized copy if the server is down.
+    /// Lists the available assemblies, lets the user pick one, then builds everything from the
+    /// chosen document. Any failure along the way falls back to the built-in cup tower.
     /// </summary>
     IEnumerator Boot()
     {
-        yield return AssemblyBackend.GetInstruction(
-            serverUrl,
-            instructionId,
-            instructionTimeoutSeconds,
-            ApplyDocument,
-            error =>
-            {
-                _sourceLabel = "local fallback";
-                Debug.LogWarning($"[AssemblyGuide] Could not load '{instructionId}' from {serverUrl} " +
-                                 $"({error}). Using the built-in steps.");
-            });
+        AssemblySummaryDto[] available = null;
+        yield return AssemblyBackend.ListInstructions(
+            serverUrl, requestTimeoutSeconds,
+            list => available = list,
+            error => Debug.LogWarning($"[AssemblyGuide] Could not list assemblies from {serverUrl} ({error})."));
 
-        CollectParts();
+        AssemblyDocumentDto document = null;
+
+        if (available != null)
+        {
+            _phase = Phase.Choosing;
+            _hud.SetProgress(0f, "Choose an assembly");
+
+            AssemblySummaryDto chosen = null;
+            var menu = SelectionMenu.Create(available);
+            menu.Chosen += entry => chosen = entry;
+
+            while (chosen == null)
+                yield return null;
+
+            _hud.SetProgress(0f, "Loading...");
+            yield return AssemblyBackend.GetInstruction(
+                serverUrl, chosen.instruction_id, requestTimeoutSeconds,
+                loaded => document = loaded,
+                error => Debug.LogWarning(
+                    $"[AssemblyGuide] Could not load '{chosen.instruction_id}' ({error})."));
+        }
+
+        if (document == null)
+        {
+            document = BuiltInAssembly.CupTower();
+            _sourceLabel = "built-in";
+            Debug.LogWarning("[AssemblyGuide] Using the built-in red cup tower.");
+        }
+        else
+        {
+            _sourceLabel = $"{document.instruction_id} v{document.version}";
+        }
+
+        ApplyDocument(document);
         BuildButtons();
 
         _phase = Phase.Placing;
@@ -153,108 +173,183 @@ public class AssemblyGuide : MonoBehaviour
     }
 
     /// <summary>
-    /// Rebuilds the step list from a backend document. The document's per-step
-    /// <c>required_slot_ids</c> is cumulative, so the parts a step actually introduces come
-    /// from the objects list instead, where each object names the step that introduces it.
+    /// Generates the hologram and the step list from a document. The per-step
+    /// <c>required_slot_ids</c> is cumulative, so the parts a step introduces come from the
+    /// objects list instead, where each object names the step that introduces it.
     /// </summary>
     void ApplyDocument(AssemblyDocumentDto document)
     {
-        var bindings = new Dictionary<string, string>();
-        foreach (var binding in slotBindings)
+        _assemblyName = string.IsNullOrEmpty(document.name) ? document.instruction_id : document.name;
+
+        var poses = AssemblyLayout.Compute(document, _partHeight, _partDiameter);
+        if (poses.Count == 0)
         {
-            if (binding != null && !string.IsNullOrEmpty(binding.slotId))
-                bindings[binding.slotId] = binding.partName;
-        }
-
-        var ordered = new List<AssemblyStepDto>(document.steps);
-        ordered.Sort((a, b) => a.step_index.CompareTo(b.step_index));
-
-        var built = new List<InstructionStep>();
-        var unmapped = new List<string>();
-
-        foreach (var step in ordered)
-        {
-            var partNames = new List<string>();
-            foreach (var obj in document.objects)
-            {
-                if (obj == null || obj.step_index != step.step_index)
-                    continue;
-
-                if (bindings.TryGetValue(obj.slot_id, out var partName) && !string.IsNullOrEmpty(partName))
-                    partNames.Add(partName);
-                else
-                    unmapped.Add(obj.slot_id);
-            }
-
-            if (partNames.Count == 0)
-                continue;
-
-            built.Add(new InstructionStep
-            {
-                title = $"Step {step.step_index + 1}",
-                partNames = partNames.ToArray(),
-                detail = step.instructions,
-            });
-        }
-
-        if (unmapped.Count > 0)
-        {
-            Debug.LogWarning($"[AssemblyGuide] {unmapped.Count} slot(s) in '{document.instruction_id}' have no " +
-                             $"binding to a child object and were skipped: {string.Join(", ", unmapped)}");
-        }
-
-        if (built.Count == 0)
-        {
-            _sourceLabel = "local fallback";
-            Debug.LogWarning($"[AssemblyGuide] '{document.instruction_id}' produced no usable steps. " +
-                             "Using the built-in steps.");
+            Debug.LogError($"[AssemblyGuide] '{document.instruction_id}' produced no parts.");
             return;
         }
 
-        steps = built.ToArray();
-        _sourceLabel = $"{document.instruction_id} v{document.version}";
-        Debug.Log($"[AssemblyGuide] Loaded '{document.name}' ({_sourceLabel}) from {serverUrl}: " +
-                  $"{steps.Length} step(s), {document.objects.Length} object(s).");
-    }
+        ClearParts();
 
-    void CollectParts()
-    {
-        var localTop = 0f;
-
-        for (var stepIndex = 0; stepIndex < steps.Length; stepIndex++)
+        var combined = new Bounds();
+        var first = true;
+        foreach (var pose in poses)
         {
-            var step = steps[stepIndex];
-            if (step?.partNames == null)
-                continue;
+            var part = CreatePart(pose, out var localBounds);
+            _parts.Add(part);
 
-            foreach (var name in step.partNames)
+            if (first)
             {
-                var child = transform.Find(name);
-                if (child == null)
-                {
-                    Debug.LogWarning($"[AssemblyGuide] No part named '{name}' under '{gameObject.name}'.");
-                    continue;
-                }
-
-                var renderer = child.GetComponentInChildren<Renderer>();
-                if (renderer == null)
-                    continue;
-
-                var localCenter = transform.InverseTransformPoint(renderer.bounds.center);
-                var localMax = transform.InverseTransformPoint(renderer.bounds.max);
-                localTop = Mathf.Max(localTop, localMax.y);
-
-                _parts.Add(new Part
-                {
-                    Name = name,
-                    StepIndex = stepIndex,
-                    Renderer = renderer,
-                    LocalCenter = localCenter,
-                });
+                combined = localBounds;
+                first = false;
+            }
+            else
+            {
+                combined.Encapsulate(localBounds);
             }
         }
 
-        _towerTop = localTop;
+        _towerTop = combined.max.y;
+        FitCollider(combined);
+
+        // Group parts into steps, preserving the document's step ordering.
+        var byStep = new SortedDictionary<int, InstructionStep>();
+        foreach (var step in document.steps)
+        {
+            if (step != null)
+                byStep[step.step_index] = new InstructionStep { Detail = step.instructions };
+        }
+
+        foreach (var part in _parts)
+        {
+            if (!byStep.TryGetValue(part.StepIndex, out var step))
+            {
+                step = new InstructionStep { Detail = string.Empty };
+                byStep[part.StepIndex] = step;
+            }
+
+            step.SlotIds.Add(part.SlotId);
+        }
+
+        _steps.Clear();
+        foreach (var entry in byStep.Values)
+        {
+            if (entry.SlotIds.Count > 0)
+                _steps.Add(entry);
+        }
+
+        // Step indices in the document may not be contiguous once empty steps are dropped, so
+        // remap each part onto its position in the final list.
+        var order = new Dictionary<int, int>();
+        var next = 0;
+        foreach (var entry in byStep)
+        {
+            if (entry.Value.SlotIds.Count > 0)
+                order[entry.Key] = next++;
+        }
+
+        foreach (var part in _parts)
+        {
+            if (order.TryGetValue(part.StepIndex, out var remapped))
+                part.StepIndex = remapped;
+        }
+
+        Debug.Log($"[AssemblyGuide] Built '{_assemblyName}' ({_sourceLabel}): " +
+                  $"{_parts.Count} part(s) in {_steps.Count} step(s), {_towerTop:F3} m tall.");
+    }
+
+    Part CreatePart(AssemblyLayout.PartPose pose, out Bounds localBounds)
+    {
+        var go = new GameObject($"{GeneratedPrefix}{pose.SlotId}");
+        go.transform.SetParent(transform, false);
+        go.transform.localPosition = pose.LocalPosition;
+        go.transform.localRotation = pose.LocalRotation;
+
+        var mesh = MeshFor(pose.ObjectType, pose.Instructions);
+        go.AddComponent<MeshFilter>().sharedMesh = mesh;
+
+        var renderer = go.AddComponent<MeshRenderer>();
+        renderer.sharedMaterial = HologramMaterials.Pending;
+        renderer.shadowCastingMode = ShadowCastingMode.Off;
+        renderer.receiveShadows = false;
+
+        localBounds = TransformBounds(mesh.bounds, Matrix4x4.TRS(
+            pose.LocalPosition, pose.LocalRotation, go.transform.localScale));
+
+        return new Part
+        {
+            SlotId = pose.SlotId,
+            ObjectType = string.IsNullOrEmpty(pose.ObjectType) ? "part" : pose.ObjectType,
+            StepIndex = pose.StepIndex,
+            Renderer = renderer,
+            LocalCenter = localBounds.center,
+        };
+    }
+
+    /// <summary>
+    /// Bounds in the hologram's own space. Measured from the mesh rather than the renderer so
+    /// the result does not change once the user rotates the hologram.
+    /// </summary>
+    static Bounds TransformBounds(Bounds bounds, Matrix4x4 matrix)
+    {
+        var result = new Bounds(matrix.MultiplyPoint3x4(bounds.center), Vector3.zero);
+        var extents = bounds.extents;
+
+        for (var corner = 0; corner < 8; corner++)
+        {
+            var offset = new Vector3(
+                (corner & 1) == 0 ? -extents.x : extents.x,
+                (corner & 2) == 0 ? -extents.y : extents.y,
+                (corner & 4) == 0 ? -extents.z : extents.z);
+            result.Encapsulate(matrix.MultiplyPoint3x4(bounds.center + offset));
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// We only ship a cup mesh. Anything that does not read as a cup gets a neutral block, so
+    /// an unfamiliar assembly is shown honestly rather than disguised as cups.
+    /// </summary>
+    Mesh MeshFor(string objectType, string instructions)
+    {
+        var looksLikeCup =
+            (!string.IsNullOrEmpty(objectType) && objectType.IndexOf("cup", StringComparison.OrdinalIgnoreCase) >= 0) ||
+            (!string.IsNullOrEmpty(instructions) && instructions.IndexOf("cup", StringComparison.OrdinalIgnoreCase) >= 0);
+
+        if (looksLikeCup && cupMesh != null)
+            return cupMesh;
+
+        if (_boxMesh == null)
+        {
+            var primitive = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            _boxMesh = primitive.GetComponent<MeshFilter>().sharedMesh;
+            Destroy(primitive);
+        }
+
+        return _boxMesh;
+    }
+
+    void ClearParts()
+    {
+        _parts.Clear();
+
+        for (var i = transform.childCount - 1; i >= 0; i--)
+        {
+            var child = transform.GetChild(i);
+            // "Cup NN" children come from the original hand-authored tower.
+            if (child.name.StartsWith(GeneratedPrefix) || child.name.StartsWith("Cup "))
+                Destroy(child.gameObject);
+        }
+    }
+
+    void FitCollider(Bounds localBounds)
+    {
+        var collider = GetComponent<BoxCollider>();
+        if (collider == null || _parts.Count == 0)
+            return;
+
+        collider.center = localBounds.center;
+        collider.size = localBounds.size;
     }
 
     void BuildButtons()
@@ -263,12 +358,7 @@ public class AssemblyGuide : MonoBehaviour
         {
             var captured = part;
             var button = WorldButton.Create(
-                $"Part Button ({part.Name})",
-                "DONE",
-                doneButtonSize,
-                transform,
-                DoneIdle,
-                DoneHover);
+                $"Part Button ({part.SlotId})", "DONE", doneButtonSize, transform, DoneIdle, DoneHover);
             button.transform.localPosition = part.LocalCenter + new Vector3(0f, 0f, -buttonForwardOffset);
             button.Clicked += () => TogglePart(captured);
             button.SetVisible(false);
@@ -291,7 +381,6 @@ public class AssemblyGuide : MonoBehaviour
         _nextButton.Clicked += AdvanceStep;
         _nextButton.SetVisible(false);
 
-        // Navigation sits below the tower, where the lock button was before locking.
         var navX = navButtonSize.x * 0.5f + 0.008f;
 
         _backButton = WorldButton.Create(
@@ -306,11 +395,17 @@ public class AssemblyGuide : MonoBehaviour
         _forwardButton.Clicked += SkipForward;
         _forwardButton.SetVisible(false);
 
-        // Sits clear of the tower's left edge (-0.15) and the leftmost part button (-0.138).
+        var sideOffset = _partDiameter * 3f + 0.15f;
+
         _instructionPanel = InfoPanel.Create(
-            "Instruction Panel", transform, new Vector2(0.24f, 0.15f), new Color(0.05f, 0.07f, 0.11f));
-        _instructionPanel.transform.localPosition = new Vector3(-0.30f, _towerTop * 0.6f, forward);
+            "Instruction Panel", transform, new Vector2(0.24f, 0.15f), PanelBackground);
+        _instructionPanel.transform.localPosition = new Vector3(-sideOffset, _towerTop * 0.6f, forward);
         _instructionPanel.SetVisible(false);
+
+        _materialsPanel = InfoPanel.Create(
+            "Materials Panel", transform, new Vector2(0.21f, 0.15f), PanelBackground);
+        _materialsPanel.transform.localPosition = new Vector3(sideOffset, _towerTop * 0.6f, forward);
+        _materialsPanel.SetVisible(false);
     }
 
     /// <summary>Applies every visual from the current state. The only place visuals are set.</summary>
@@ -337,7 +432,6 @@ public class AssemblyGuide : MonoBehaviour
                 default:
                     if (part.StepIndex < _stepIndex)
                     {
-                        // Finished instructions stay on screen in green as a record.
                         Show(part, true);
                         Paint(part, HologramMaterials.StepComplete);
                         part.Button.SetVisible(false);
@@ -376,15 +470,12 @@ public class AssemblyGuide : MonoBehaviour
 
         if (_phase == Phase.Assembling)
         {
-            var step = steps[_stepIndex];
-            _instructionPanel.SetText(
-                $"Step {_stepIndex + 1} of {steps.Length}",
-                string.IsNullOrEmpty(step.detail) ? step.title : step.detail);
+            _instructionPanel.SetText($"Step {_stepIndex + 1} of {_steps.Count}", _steps[_stepIndex].Detail);
             _instructionPanel.SetVisible(true);
         }
         else if (_phase == Phase.Complete)
         {
-            _instructionPanel.SetText("Complete", "All instructions finished.");
+            _instructionPanel.SetText("Complete", $"{_assemblyName} finished.");
             _instructionPanel.SetVisible(true);
         }
         else
@@ -392,7 +483,65 @@ public class AssemblyGuide : MonoBehaviour
             _instructionPanel.SetVisible(false);
         }
 
+        RefreshMaterials();
         Report();
+    }
+
+    /// <summary>Bill of materials, with how many of each type are still to be placed.</summary>
+    void RefreshMaterials()
+    {
+        if (_materialsPanel == null)
+            return;
+
+        if (_phase == Phase.Choosing)
+        {
+            _materialsPanel.SetVisible(false);
+            return;
+        }
+
+        var totals = new SortedDictionary<string, int>();
+        var remaining = new SortedDictionary<string, int>();
+
+        foreach (var part in _parts)
+        {
+            totals.TryGetValue(part.ObjectType, out var total);
+            totals[part.ObjectType] = total + 1;
+
+            if (!remaining.ContainsKey(part.ObjectType))
+                remaining[part.ObjectType] = 0;
+            if (!part.IsDone)
+                remaining[part.ObjectType] = remaining[part.ObjectType] + 1;
+        }
+
+        var body = new System.Text.StringBuilder();
+        foreach (var entry in totals)
+        {
+            var left = remaining[entry.Key];
+            body.AppendLine(left > 0
+                ? $"{entry.Key} x{entry.Value}   {left} left"
+                : $"{entry.Key} x{entry.Value}   done");
+        }
+
+        if (_phase == Phase.Assembling)
+        {
+            var stepTotal = 0;
+            var stepLeft = 0;
+            foreach (var part in _parts)
+            {
+                if (part.StepIndex != _stepIndex)
+                    continue;
+
+                stepTotal++;
+                if (!part.IsDone)
+                    stepLeft++;
+            }
+
+            body.AppendLine();
+            body.AppendLine($"This step: {stepLeft} of {stepTotal} left");
+        }
+
+        _materialsPanel.SetText("MATERIALS", body.ToString().TrimEnd());
+        _materialsPanel.SetVisible(true);
     }
 
     void Lock()
@@ -510,7 +659,7 @@ public class AssemblyGuide : MonoBehaviour
             case Phase.Assembling:
                 _hud.SetProgress(
                     total == 0 ? 0f : done / (float)total,
-                    $"Step {_stepIndex + 1}/{steps.Length}   {doneInCurrentStep}/{inCurrentStep} placed");
+                    $"Step {_stepIndex + 1}/{_steps.Count}   {doneInCurrentStep}/{inCurrentStep} placed");
                 break;
             case Phase.Complete:
                 _hud.SetProgress(1f, "Assembly complete");
