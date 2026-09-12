@@ -75,7 +75,9 @@ Then open **http://127.0.0.1:8000/dashboard** in a browser.
 1. **Create product** → gives you an empty draft.
 2. **Upload GLB** → opens a website file list rather than the Mac file
    picker. Click **Upload** beside `stacked-red-cups-demo.glb`; a short progress
-   bar confirms the action, then the bundled six-part demo is attached. More
+   bar confirms the action, then the bundled six-part demo and its six editable
+   assembly steps are attached. **Next** and slider states 0–6 work immediately;
+   source CAD is still required before publishing. More
    model-library sources can be implemented later. A local file can still be
    dragged directly onto the Product Model preview. Every model is validated (binary glTF 2.0, embedded resources only, no
    Draco/Meshopt/KTX2/required extensions, ≤2,000 nodes, ≤50 MiB) and rendered

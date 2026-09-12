@@ -256,14 +256,21 @@ def generate_hardcoded_fusion_instructions(model):
     return steps,mapped
 
 
-def attach_model(pid,revision,data,filename=None):
+def attach_model(pid,revision,data,filename=None,seed_demo_steps=False):
     p=product(pid);check_revision(p,revision)
     asset=store_upload(data,'model',filename);version=uuid.uuid4().hex
     old=p['model'] or {}
     model={**old,'version':version,'url':asset['url'],'filename':filename,
            'parts':[{'id':f'part_{version}_{x["node_index"]}',**x} for x in asset['parts']]}
     fields={'model':model}
-    if p.get('demo_pending_mapping'):
+    if seed_demo_steps and not p['draft']['steps']:
+        # The website's bundled GLB is a complete demo, so a new product can
+        # be stepped through immediately. Source CAD is still required before
+        # publishing; this only seeds the editable manufacturer draft.
+        steps,mapped=generate_hardcoded_fusion_instructions(model)
+        fields['draft']={**p['draft'],'steps':steps}
+        fields['demo_pending_mapping']=not mapped
+    elif p.get('demo_pending_mapping'):
         # The draft still holds the unmapped hardcoded demo steps from an earlier
         # Fusion-file-first upload; try to complete that mapping now, but only
         # ever from this specific pending state, never overwriting a manufacturer's
@@ -284,7 +291,7 @@ async def upload_model(pid:str,revision:int,request:Request,filename:str|None=No
 @router.post('/dashboard/api/products/{pid}/demo-model')
 def use_stacked_red_cups_demo(pid:str,revision:int):
     data=Path(__file__).with_name('dashboard-demo-6cup.glb').read_bytes()
-    return attach_model(pid,revision,data,'stacked-red-cups-demo.glb')
+    return attach_model(pid,revision,data,'stacked-red-cups-demo.glb',seed_demo_steps=True)
 
 
 def attach_source(pid,revision,data,filename):

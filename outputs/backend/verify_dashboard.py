@@ -25,6 +25,9 @@ with httpx.Client(base_url='http://127.0.0.1:8000',timeout=40,trust_env=False) a
   p4=call('POST',url4+'/demo-model?revision='+str(p4['revision']));assets.append(p4['model']['url'])
   assert p4['model']['filename']=='stacked-red-cups-demo.glb'
   assert [part['name'] for part in p4['model']['parts']]==[f'Cup_{i}' for i in range(1,7)]
+  assert len(p4['draft']['steps'])==6
+  assert [step['part_ids'] for step in p4['draft']['steps']]==[[part['id']] for part in p4['model']['parts']]
+  assert [step['opening_direction'] for step in p4['draft']['steps']]==['up','up','up','down','down','up']
   report['website_model_library_selects_six_cup_glb']=True
   seed=call('GET','/instructions/assembly-1')
   p=call('POST','/dashboard/api/products',201);pid=p['_id'];url='/dashboard/api/products/'+pid;iid='product_'+pid
