@@ -178,6 +178,13 @@ public class WorldButton : MonoBehaviour
             gameObject.SetActive(visible);
     }
 
+    public void SetColors(Color idle, Color hover)
+    {
+        _idleColor = idle;
+        _hoverColor = hover;
+        HologramMaterials.SetPanelColor(_material, idle);
+    }
+
     void OnDestroy()
     {
         if (_material != null)

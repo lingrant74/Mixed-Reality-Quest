@@ -12542,6 +12542,7 @@ MonoBehaviour:
     - Cup 06
   doneButtonSize: {x: 0.078, y: 0.034}
   wideButtonSize: {x: 0.21, y: 0.058}
+  navButtonSize: {x: 0.1, y: 0.046}
   buttonForwardOffset: 0.11
 --- !u!1 &1627078637
 GameObject:
