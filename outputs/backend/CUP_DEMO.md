@@ -7,11 +7,12 @@ Only the current snapshot is shown to the model.
 
 ## Current base PNG fixture
 
-When the backend runs with `ASSIST_MODE=mock`, every valid PNG currently returns
+When the backend runs with `ASSIST_DEMO_FIXTURE=middle_right_flipped`, every valid PNG currently returns
 the fixed message **“The right cup on the second row is upside down.”** The
 response highlights `cup_5` and includes a `flipped` issue at `middle_right`.
 This proves the PNG request, JSON response, message display, and hologram-ID
-path. It does not analyze the pixels. The structured issue contract also reserves
+path. It does not analyze the pixels and reports `mock: true` even when
+`ASSIST_MODE=vision`. The structured issue contract also reserves
 `misaligned` so real detection can replace this fixture later.
 
 ## Steps
@@ -30,7 +31,7 @@ Earlier required layers are always checked. Occluded evidence is not inferred.
 ## Requests unchanged
 
 `GET /health` still returns `{"status":"ok"}`. Send `POST /assist` to
-`http://10.50.19.61:8000` with the same request fields:
+`http://10.50.22.165:8000` on this Mac's current LAN with the same request fields:
 
 ```json
 {
@@ -119,6 +120,7 @@ The VLM's underlying observations can still be wrong; see measured results.
 
 ```sh
 ASSIST_MODE=vision .venv/bin/python -m uvicorn main:app --host 0.0.0.0 --port 8000
+ASSIST_MODE=vision ASSIST_DEMO_FIXTURE=middle_right_flipped .venv/bin/python -m uvicorn main:app --host 0.0.0.0 --port 8000
 ASSIST_MODE=mock .venv/bin/python -m uvicorn main:app --host 0.0.0.0 --port 8000
 python3 test_image.py cup_photos/photo-3.png --step-index 2 --expect-mode vision
 python3 test_cup_photos.py --output cup-results.json

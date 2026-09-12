@@ -123,7 +123,7 @@ can bypass it, but invalid stored documents are rejected by the read API.
 
 ## Unity endpoints and example responses
 
-Base URL: `http://10.50.19.61:8000` on the same LAN. Existing Quest HTTP settings
+Base URL on this Mac's current network: `http://10.50.22.165:8000`. Existing Quest HTTP settings
 apply. Use GET requests without request bodies. These routes do not call Ollama.
 
 `GET /instructions` returns a top-level array of summaries:

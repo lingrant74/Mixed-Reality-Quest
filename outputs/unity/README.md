@@ -6,7 +6,8 @@ these are logged, not acted on automatically.
 See `../backend/CUP_DEMO.md` for the current contract and step indices 0–2,
 and `../backend/CUP_OBSERVATION_RESULTS.md` for measured model errors. Require manual
 confirmation: `advance_step` is always false, even for `status: correct`.
-For the current base integration, a valid PNG in mock mode always returns “The
+For the current base integration, a valid PNG with
+`ASSIST_DEMO_FIXTURE=middle_right_flipped` always returns “The
 right cup on the second row is upside down,” with `cup_5` highlighted and a
 `flipped` issue. This is a fixed transport/UI fixture, not image analysis.
 
@@ -18,8 +19,9 @@ right cup on the second row is upside down,” with `cup_5` highlighted and a
    (including Android overrides), and Apply. Use a non-HDR RGB/RGBA texture.
    Drag it into **Test Texture** on the component. PNG is the default outgoing
    encoding; enable **Encode As Jpeg** to send JPEG regardless of the source file extension.
-3. Keep **Server Url** at `http://10.50.19.61:8000` or change it to the Dell's
-   current LAN address. Enter Play mode: health runs once and logs `ok`.
+3. For this Mac and network, set **Server Url** to `http://10.50.22.165:8000`.
+   Enter Play mode: health runs once and logs `ok`. Recheck the address after
+   changing networks.
 4. Open the component's context menu and select **Send Test Texture**. Expect
    the assessment guidance (fixed guidance in mock mode), echoed request ID/step, empty highlights, null audio,
    and the selected mode's `mock` flag in the Console. **Check Backend Health** repeats health.
@@ -56,7 +58,7 @@ replace the Meta manifest. This example requires no camera permission.
 
 Quest and Dell must be on a LAN that permits device-to-device traffic, with TCP
 8000 reachable on Dell. Campus/guest Wi-Fi can isolate clients. Test
-`http://10.50.19.61:8000/health` from the teammate's machine first. Quest must
+`http://10.50.22.165:8000/health` from the Quest or another LAN device first. Quest must
 use the Dell IP, not localhost or 0.0.0.0. Native Unity Android requests do not
 need browser CORS setup; this is not a WebGL example.
 
@@ -66,7 +68,7 @@ need browser CORS setup; this is not a WebGL example.
 - Double-click Send while a request is pending; expect a skipped-request log.
 - Set a closed port to check connection error/timeout logging, then restore URL.
 - To check HTTP body logging, temporarily set Server Url to
-  `http://10.50.19.61:8000/not-a-route`; health should log HTTP 404 and its JSON
+  `http://10.50.22.165:8000/not-a-route`; health should log HTTP 404 and its JSON
   body. Restore the URL afterward. HTTP 422 bodies are logged the same way.
 - Repeat health and image submission on Quest.
 

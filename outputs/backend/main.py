@@ -4,6 +4,7 @@ import asyncio
 import logging
 import base64
 import binascii
+import os
 import warnings
 from io import BytesIO
 from typing import Literal
@@ -39,6 +40,7 @@ def dashboard_page():
 async def database_error(request, exc):
     return JSONResponse(status_code=503, content={'detail': {'code': 'mongodb_unavailable', 'message': 'Local storage is unavailable. Start MongoDB and try again.'}})
 settings = Settings()
+demo_fixture = os.getenv("ASSIST_DEMO_FIXTURE", "").strip()
 inference_lock = asyncio.Lock()
 
 
@@ -116,7 +118,8 @@ async def assist(request: AssistRequest) -> AssistResponse:
         raise HTTPException(422, {"code": "assembly_context_mismatch",
             "message": "Use assembly-1 and step_index 0, 1 or 2 for the cup demo",
             "request_id": request.request_id})
-    if settings.mode == "mock" and request.snapshot.mime_type == "image/png":
+    fixture_active = demo_fixture == "middle_right_flipped" and request.snapshot.mime_type == "image/png"
+    if fixture_active:
         # Fixed first-pass fixture. It proves PNG transport, feedback text and
         # hologram selection before real placement detection is connected.
         guidance = "The right cup on the second row is upside down."
@@ -124,7 +127,7 @@ async def assist(request: AssistRequest) -> AssistResponse:
         issues = [PlacementIssue(piece_id="cup_5", location="middle_right",
             issue_type="flipped", message=guidance)]
         status = "incorrect"
-    if settings.mode == "vision":
+    if settings.mode == "vision" and not fixture_active:
         if inference_lock.locked():
             raise HTTPException(503, {"code": "model_busy", "message": "Another local inference request is running",
                                       "request_id": request.request_id})
@@ -143,7 +146,7 @@ async def assist(request: AssistRequest) -> AssistResponse:
         highlight_piece_ids=highlights,
         issues=issues,
         audio_url=None,
-        mock=settings.mode == "mock",
+        mock=settings.mode == "mock" or fixture_active,
         status=status,
         advance_step=False,  # Temporary manual-confirmation interlock, even for correct.
     )

@@ -25,7 +25,9 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self):
         self.original_mode = main.settings.mode
+        self.original_fixture = main.demo_fixture
         main.settings.mode = "vision"
+        main.demo_fixture = ""
         main.inference_lock = asyncio.Lock()
         self.client = httpx.AsyncClient(transport=httpx.ASGITransport(app=main.app), base_url="http://test")
         image = BytesIO()
@@ -37,6 +39,7 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
     async def asyncTearDown(self):
         await self.client.aclose()
         main.settings.mode = self.original_mode
+        main.demo_fixture = self.original_fixture
 
     async def test_health_and_explicit_mock(self):
         self.assertEqual((await self.client.get("/health")).json(), {"status": "ok"})
@@ -44,6 +47,16 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
         with patch.object(main, "infer", new_callable=AsyncMock) as call:
             response = await self.client.post("/assist", json=self.payload)
         self.assertEqual(response.status_code, 200)
+        data=response.json()
+        self.assertTrue(data["mock"])
+        self.assertEqual(data["status"],"uncertain")
+        self.assertEqual(data["issues"],[])
+        call.assert_not_called()
+
+    async def test_configured_png_fixture_works_in_vision_mode_without_inference(self):
+        main.demo_fixture="middle_right_flipped"
+        with patch.object(main,"infer",new_callable=AsyncMock) as call:
+            response=await self.client.post("/assist",json=self.payload)
         data=response.json()
         self.assertTrue(data["mock"])
         self.assertEqual(data["status"],"incorrect")

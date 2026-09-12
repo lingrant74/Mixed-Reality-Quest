@@ -7,7 +7,7 @@ using UnityEngine.Networking;
 // Attach one instance to a scene GameObject. No camera capture or AI.
 public class AssemblyBackendExample : MonoBehaviour
 {
-    public string serverUrl = "http://10.50.19.61:8000";
+    public string serverUrl = "http://10.50.22.165:8000";
     public Texture2D testTexture;
     public bool encodeAsJpeg = false;
     [Range(1, 100)] public int jpegQuality = 85;

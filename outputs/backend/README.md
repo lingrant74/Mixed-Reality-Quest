@@ -21,6 +21,14 @@ python3 -m venv .venv
 ASSIST_MODE=vision .venv/bin/python -m uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 
+For the current fixed PNG feedback fixture, keep vision mode selected but bypass
+Ollama until the real detector is ready:
+
+```sh
+ASSIST_MODE=vision ASSIST_DEMO_FIXTURE=middle_right_flipped \
+  .venv/bin/python -m uvicorn main:app --host 0.0.0.0 --port 8000
+```
+
 `ASSIST_MODE=mock` works instead of `vision` if you don't need `/assist` (the
 dashboard, `/instructions`, and publishing don't use Ollama at all). Before
 starting the server you also need MongoDB running — see
@@ -198,9 +206,9 @@ Invalid payloads/images return HTTP 422. `step_index` is a zero-based,
 integer 0, 1 or 2 for the cup demo. `view_type` is a caller-defined label, such as `headset`.
 
 Successful responses echo `request_id` and `step_index`. For the current base
-integration, `ASSIST_MODE=mock` returns a fixed middle-right flipped-cup result
+integration, `ASSIST_DEMO_FIXTURE=middle_right_flipped` returns a fixed middle-right flipped-cup result
 for every valid PNG. This exercises the Unity feedback path without analyzing
-the pixels. Real vision responses use model observations and `mock: false`, with
+the pixels and reports `mock: true`. Real vision responses use model observations and `mock: false`, with
 the same fields:
 
 ```json
