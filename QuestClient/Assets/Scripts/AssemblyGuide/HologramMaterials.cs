@@ -13,6 +13,22 @@ public static class HologramMaterials
     static Material _pending;
     static Material _done;
     static Material _stepComplete;
+    static Material _preview;
+
+    /// <summary>
+    /// Menu thumbnail ghost. Much stronger rim than the in-room holograms: there are no lights
+    /// in a passthrough scene, so the fresnel edge is the only thing that gives a miniature
+    /// model a readable silhouette against the dark menu panel.
+    /// </summary>
+    public static Material Preview
+    {
+        get
+        {
+            if (_preview == null)
+                _preview = Ghost(new Color(0.35f, 0.72f, 1f, 0.22f), new Color(0.75f, 0.93f, 1f), 1.6f);
+            return _preview;
+        }
+    }
 
     /// <summary>Faint blue ghost: the part has not been placed yet.</summary>
     public static Material Pending

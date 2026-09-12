@@ -113,6 +113,27 @@ public static class AssemblyLayout
         return result;
     }
 
+    /// <summary>
+    /// Bounds carried through a transform, measured from all eight corners so the result is
+    /// correct for any rotation.
+    /// </summary>
+    public static Bounds TransformBounds(Bounds bounds, Matrix4x4 matrix)
+    {
+        var result = new Bounds(matrix.MultiplyPoint3x4(bounds.center), Vector3.zero);
+        var extents = bounds.extents;
+
+        for (var corner = 0; corner < 8; corner++)
+        {
+            var offset = new Vector3(
+                (corner & 1) == 0 ? -extents.x : extents.x,
+                (corner & 2) == 0 ? -extents.y : extents.y,
+                (corner & 4) == 0 ? -extents.z : extents.z);
+            result.Encapsulate(matrix.MultiplyPoint3x4(bounds.center + offset));
+        }
+
+        return result;
+    }
+
     static bool IsGround(AssemblyObjectDto obj)
     {
         if (obj.supporting_slot_ids == null || obj.supporting_slot_ids.Length == 0)

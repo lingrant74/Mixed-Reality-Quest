@@ -2,49 +2,51 @@ using TMPro;
 using UnityEngine;
 
 /// <summary>
-/// Head-locked progress readout pinned to the top-right of the view. Built from 3D quads and
-/// 3D TextMeshPro rather than a Canvas, so it needs no EventSystem and composites cleanly
-/// over passthrough.
+/// Progress readout for the current assembly. Built from 3D quads and 3D TextMeshPro rather
+/// than a Canvas, so it needs no EventSystem and composites cleanly over passthrough.
+/// <para>
+/// It is parented to the instruction panel so the two read as one block and share the panel's
+/// billboard rotation, rather than drifting apart as the user moves.
+/// </para>
 /// </summary>
 public class ProgressHud : MonoBehaviour
 {
-    const float BarWidth = 0.24f;
-    const float BarHeight = 0.016f;
-    const float CaptionWidth = 0.26f;
+    const float BarHeight = 0.012f;
 
-    // Placed about 22 degrees right and 13 degrees up from centre at 0.9 m: far enough to
-    // read as a corner HUD, close enough to stay inside the comfortable field of view.
-    static readonly Vector3 ViewOffset = new Vector3(0.24f, 0.21f, 0.90f);
-
+    float _barWidth;
     Transform _fill;
     TextMeshPro _caption;
     Material _fillMaterial;
 
-    public static ProgressHud Create()
+    public static ProgressHud Create(Transform parent, Vector3 localPosition, float barWidth)
     {
         var root = new GameObject("Assembly Progress HUD");
+        root.transform.SetParent(parent, false);
+        root.transform.localPosition = localPosition;
+
         var hud = root.AddComponent<ProgressHud>();
+        hud._barWidth = barWidth;
         hud.Build();
         return hud;
     }
 
     void Build()
     {
-        var track = Panel("Track", new Color(0.04f, 0.06f, 0.10f), BarWidth, BarHeight, 0f);
+        var track = Panel("Track", new Color(0.04f, 0.06f, 0.10f), _barWidth, BarHeight, 0f);
         track.localPosition = Vector3.zero;
 
-        _fill = Panel("Fill", new Color(0.2f, 0.85f, 1f), BarWidth, BarHeight, -0.001f);
+        _fill = Panel("Fill", new Color(0.2f, 0.85f, 1f), _barWidth, BarHeight, -0.001f);
         _fillMaterial = _fill.GetComponent<Renderer>().sharedMaterial;
 
         var caption = new GameObject("Caption");
         caption.transform.SetParent(transform, false);
-        caption.transform.localPosition = new Vector3(0f, BarHeight * 0.5f + 0.018f, -0.001f);
+        caption.transform.localPosition = new Vector3(0f, BarHeight * 0.5f + 0.016f, -0.001f);
         _caption = caption.AddComponent<TextMeshPro>();
         _caption.alignment = TextAlignmentOptions.Center;
         _caption.enableAutoSizing = false;
         _caption.textWrappingMode = TextWrappingModes.NoWrap;
         _caption.color = Color.white;
-        _caption.rectTransform.sizeDelta = new Vector2(CaptionWidth, 0.05f);
+        _caption.rectTransform.sizeDelta = new Vector2(_barWidth, 0.04f);
 
         SetProgress(0f, "Starting up");
     }
@@ -75,8 +77,8 @@ public class ProgressHud : MonoBehaviour
         if (_fill != null)
         {
             // Grow from the left edge instead of from the quad's centre.
-            _fill.localScale = new Vector3(BarWidth * normalized, BarHeight, 1f);
-            _fill.localPosition = new Vector3(-BarWidth * 0.5f + BarWidth * normalized * 0.5f, 0f, -0.001f);
+            _fill.localScale = new Vector3(_barWidth * normalized, BarHeight, 1f);
+            _fill.localPosition = new Vector3(-_barWidth * 0.5f + _barWidth * normalized * 0.5f, 0f, -0.001f);
         }
 
         if (_fillMaterial != null)
@@ -96,7 +98,7 @@ public class ProgressHud : MonoBehaviour
 
     /// <summary>
     /// TMP auto-sizing does not clamp reliably at these scales, so measure at a known font
-    /// size and scale down until the line fits the HUD width.
+    /// size and scale down until the line fits the bar width.
     /// </summary>
     void FitCaption()
     {
@@ -107,19 +109,8 @@ public class ProgressHud : MonoBehaviour
         if (bounds.x <= 0.0001f)
             return;
 
-        _caption.fontSize = Mathf.Min(0.15f, CaptionWidth / bounds.x);
+        _caption.fontSize = Mathf.Min(0.16f, _barWidth / bounds.x);
         _caption.ForceMeshUpdate(true, true);
-    }
-
-    void LateUpdate()
-    {
-        var camera = Camera.main;
-        if (camera == null)
-            return;
-
-        var head = camera.transform;
-        transform.position = head.TransformPoint(ViewOffset);
-        transform.rotation = Quaternion.LookRotation(transform.position - head.position, head.up);
     }
 
     void OnDestroy()

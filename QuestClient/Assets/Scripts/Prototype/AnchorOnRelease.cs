@@ -41,6 +41,14 @@ public class AnchorOnRelease : MonoBehaviour
         CreateAnchor();
     }
 
+    /// <summary>Releases the lock so the hologram can be repositioned for another assembly.</summary>
+    public void Unlock()
+    {
+        _locked = false;
+        _selectCount = 0;
+        DropAnchor();
+    }
+
     void HandlePointerEvent(PointerEvent pointerEvent)
     {
         if (_locked)

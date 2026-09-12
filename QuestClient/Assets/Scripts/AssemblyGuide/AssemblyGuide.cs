@@ -112,64 +112,149 @@ public class AssemblyGuide : MonoBehaviour
         // round trip so they are not left hanging behind the selection menu.
         ClearParts();
 
-        _hud = ProgressHud.Create();
-        _hud.SetProgress(0f, "Contacting server...");
-
         SetGrabEnabled(false);
         StartCoroutine(Boot());
     }
 
     /// <summary>
     /// Lists the available assemblies, lets the user pick one, then builds everything from the
-    /// chosen document. Any failure along the way falls back to the built-in cup tower.
+    /// chosen document. If the server cannot be reached at all we skip the menu and go straight
+    /// to the built-in cup tower.
     /// </summary>
     IEnumerator Boot()
     {
+        _phase = Phase.Choosing;
+
+        var menu = SelectionMenu.Create(_partHeight, _partDiameter, MeshFor);
+        menu.SetStatus("Contacting server...");
+
         AssemblySummaryDto[] available = null;
         yield return AssemblyBackend.ListInstructions(
             serverUrl, requestTimeoutSeconds,
             list => available = list,
             error => Debug.LogWarning($"[AssemblyGuide] Could not list assemblies from {serverUrl} ({error})."));
 
-        AssemblyDocumentDto document = null;
-
-        if (available != null)
+        if (available == null)
         {
-            _phase = Phase.Choosing;
-            _hud.SetProgress(0f, "Choose an assembly");
+            Destroy(menu.gameObject);
+            Debug.LogWarning("[AssemblyGuide] Server unreachable; using the built-in red cup tower.");
+            Begin(BuiltInAssembly.CupTower());
+            yield break;
+        }
 
-            AssemblySummaryDto chosen = null;
-            var menu = SelectionMenu.Create(available);
-            menu.Chosen += entry => chosen = entry;
+        // Each document is fetched up front so every row can show a miniature of the real
+        // assembly, and so picking a row needs no further round trip.
+        var entries = new List<SelectionMenu.Entry>();
+        for (var i = 0; i < available.Length; i++)
+        {
+            var summary = available[i];
+            menu.SetStatus($"Loading {i + 1} of {available.Length}...");
 
-            while (chosen == null)
-                yield return null;
-
-            _hud.SetProgress(0f, "Loading...");
+            AssemblyDocumentDto loaded = null;
             yield return AssemblyBackend.GetInstruction(
-                serverUrl, chosen.instruction_id, requestTimeoutSeconds,
-                loaded => document = loaded,
+                serverUrl, summary.instruction_id, requestTimeoutSeconds,
+                document => loaded = document,
                 error => Debug.LogWarning(
-                    $"[AssemblyGuide] Could not load '{chosen.instruction_id}' ({error})."));
+                    $"[AssemblyGuide] Could not load '{summary.instruction_id}' ({error})."));
+
+            entries.Add(new SelectionMenu.Entry { Summary = summary, Document = loaded });
         }
 
-        if (document == null)
+        // The built-in tower is offered too: it is the only assembly guaranteed to match the
+        // physical red cups, which makes it the reliable choice for a demo.
+        var builtIn = BuiltInAssembly.CupTower();
+        entries.Add(new SelectionMenu.Entry
         {
-            document = BuiltInAssembly.CupTower();
-            _sourceLabel = "built-in";
-            Debug.LogWarning("[AssemblyGuide] Using the built-in red cup tower.");
-        }
-        else
+            Summary = new AssemblySummaryDto
+            {
+                instruction_id = builtIn.instruction_id,
+                version = builtIn.version,
+                name = builtIn.name,
+                description = builtIn.description,
+            },
+            Document = builtIn,
+        });
+
+        menu.SetEntries(entries);
+
+        SelectionMenu.Entry chosen = null;
+        menu.Chosen += entry => chosen = entry;
+        while (chosen == null)
+            yield return null;
+
+        var picked = chosen.Document;
+        if (picked == null)
         {
-            _sourceLabel = $"{document.instruction_id} v{document.version}";
+            Debug.LogWarning(
+                $"[AssemblyGuide] '{chosen.Summary.instruction_id}' never loaded; using the built-in tower.");
+            picked = BuiltInAssembly.CupTower();
         }
+
+        Begin(picked);
+    }
+
+    void Begin(AssemblyDocumentDto document)
+    {
+        _sourceLabel = document.instruction_id == BuiltInAssembly.Id
+            ? "built-in"
+            : $"{document.instruction_id} v{document.version}";
 
         ApplyDocument(document);
         BuildButtons();
 
         _phase = Phase.Placing;
+        _stepIndex = 0;
         SetGrabEnabled(true);
         Refresh();
+    }
+
+    /// <summary>Returns to the selection menu so another assembly can be built.</summary>
+    void Restart()
+    {
+        TearDown();
+
+        if (_anchor != null)
+            _anchor.Unlock();
+
+        SetGrabEnabled(false);
+        _stepIndex = 0;
+        StartCoroutine(Boot());
+    }
+
+    void TearDown()
+    {
+        // Buttons are destroyed through their part references before the parts list is cleared.
+        foreach (var part in _parts)
+        {
+            if (part.Button != null)
+                Destroy(part.Button.gameObject);
+        }
+
+        ClearParts();
+        _steps.Clear();
+
+        DestroyWidget(_lockButton);
+        DestroyWidget(_nextButton);
+        DestroyWidget(_backButton);
+        DestroyWidget(_forwardButton);
+        DestroyWidget(_materialsPanel);
+
+        // The progress bar is parented to the instruction panel, so it goes with it.
+        DestroyWidget(_instructionPanel);
+
+        _lockButton = null;
+        _nextButton = null;
+        _backButton = null;
+        _forwardButton = null;
+        _materialsPanel = null;
+        _instructionPanel = null;
+        _hud = null;
+    }
+
+    static void DestroyWidget(Component widget)
+    {
+        if (widget != null)
+            Destroy(widget.gameObject);
     }
 
     /// <summary>
@@ -272,7 +357,7 @@ public class AssemblyGuide : MonoBehaviour
         renderer.shadowCastingMode = ShadowCastingMode.Off;
         renderer.receiveShadows = false;
 
-        localBounds = TransformBounds(mesh.bounds, Matrix4x4.TRS(
+        localBounds = AssemblyLayout.TransformBounds(mesh.bounds, Matrix4x4.TRS(
             pose.LocalPosition, pose.LocalRotation, go.transform.localScale));
 
         return new Part
@@ -283,27 +368,6 @@ public class AssemblyGuide : MonoBehaviour
             Renderer = renderer,
             LocalCenter = localBounds.center,
         };
-    }
-
-    /// <summary>
-    /// Bounds in the hologram's own space. Measured from the mesh rather than the renderer so
-    /// the result does not change once the user rotates the hologram.
-    /// </summary>
-    static Bounds TransformBounds(Bounds bounds, Matrix4x4 matrix)
-    {
-        var result = new Bounds(matrix.MultiplyPoint3x4(bounds.center), Vector3.zero);
-        var extents = bounds.extents;
-
-        for (var corner = 0; corner < 8; corner++)
-        {
-            var offset = new Vector3(
-                (corner & 1) == 0 ? -extents.x : extents.x,
-                (corner & 2) == 0 ? -extents.y : extents.y,
-                (corner & 4) == 0 ? -extents.z : extents.z);
-            result.Encapsulate(matrix.MultiplyPoint3x4(bounds.center + offset));
-        }
-
-        return result;
     }
 
     /// <summary>
@@ -358,7 +422,7 @@ public class AssemblyGuide : MonoBehaviour
         {
             var captured = part;
             var button = WorldButton.Create(
-                $"Part Button ({part.SlotId})", "DONE", doneButtonSize, transform, DoneIdle, DoneHover);
+                $"Done Button ({part.SlotId})", "DONE", doneButtonSize, transform, DoneIdle, DoneHover);
             button.transform.localPosition = part.LocalCenter + new Vector3(0f, 0f, -buttonForwardOffset);
             button.Clicked += () => TogglePart(captured);
             button.SetVisible(false);
@@ -378,7 +442,14 @@ public class AssemblyGuide : MonoBehaviour
             "Next Step Button", "NEXT STEP", wideButtonSize, transform,
             new Color(0.08f, 0.42f, 0.22f), new Color(0.15f, 0.85f, 0.40f));
         _nextButton.transform.localPosition = new Vector3(0f, _towerTop + 0.09f, forward);
-        _nextButton.Clicked += AdvanceStep;
+        // Doubles as the way back to the menu once the assembly is finished.
+        _nextButton.Clicked += () =>
+        {
+            if (_phase == Phase.Complete)
+                Restart();
+            else
+                AdvanceStep();
+        };
         _nextButton.SetVisible(false);
 
         var navX = navButtonSize.x * 0.5f + 0.008f;
@@ -396,11 +467,19 @@ public class AssemblyGuide : MonoBehaviour
         _forwardButton.SetVisible(false);
 
         var sideOffset = _partDiameter * 3f + 0.15f;
+        var instructionSize = new Vector2(0.24f, 0.15f);
 
         _instructionPanel = InfoPanel.Create(
-            "Instruction Panel", transform, new Vector2(0.24f, 0.15f), PanelBackground);
+            "Instruction Panel", transform, instructionSize, PanelBackground);
         _instructionPanel.transform.localPosition = new Vector3(-sideOffset, _towerTop * 0.6f, forward);
         _instructionPanel.SetVisible(false);
+
+        // Parented to the instruction panel so the bar sits directly above the text it
+        // describes and inherits the panel's billboard rotation instead of drifting from it.
+        _hud = ProgressHud.Create(
+            _instructionPanel.transform,
+            new Vector3(0f, instructionSize.y * 0.5f + 0.014f, -0.002f),
+            instructionSize.x * 0.92f);
 
         _materialsPanel = InfoPanel.Create(
             "Materials Panel", transform, new Vector2(0.21f, 0.15f), PanelBackground);
@@ -460,15 +539,23 @@ public class AssemblyGuide : MonoBehaviour
 
         _lockButton.SetVisible(_phase == Phase.Placing);
 
-        var showNext = _phase == Phase.Assembling && stepComplete;
-        if (showNext)
+        var showNext = _phase == Phase.Complete || (_phase == Phase.Assembling && stepComplete);
+        if (_phase == Phase.Complete)
+            _nextButton.SetLabel("CHOOSE ANOTHER");
+        else if (showNext)
             _nextButton.SetLabel(_stepIndex >= LastStep ? "FINISH" : "NEXT STEP");
         _nextButton.SetVisible(showNext);
 
         _backButton.SetVisible(_phase == Phase.Complete || (_phase == Phase.Assembling && _stepIndex > 0));
         _forwardButton.SetVisible(_phase == Phase.Assembling && _stepIndex < LastStep);
 
-        if (_phase == Phase.Assembling)
+        if (_phase == Phase.Placing)
+        {
+            _instructionPanel.SetText(
+                _assemblyName, "Grab the hologram to position it, then press LOCK IN PLACE.");
+            _instructionPanel.SetVisible(true);
+        }
+        else if (_phase == Phase.Assembling)
         {
             _instructionPanel.SetText($"Step {_stepIndex + 1} of {_steps.Count}", _steps[_stepIndex].Detail);
             _instructionPanel.SetVisible(true);

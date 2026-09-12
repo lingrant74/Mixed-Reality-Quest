@@ -20,7 +20,7 @@ public class WorldButton : MonoBehaviour
     Color _hoverColor;
     bool _faceCamera;
     bool _clickPending;
-    Vector2 _size;
+    Vector2 _labelArea;
 
     /// <summary>
     /// Creates a button. The root is built inactive so the Interaction SDK components can be
@@ -51,8 +51,6 @@ public class WorldButton : MonoBehaviour
 
     void Build(string label, Vector2 size)
     {
-        _size = size;
-
         var collider = gameObject.AddComponent<BoxCollider>();
         collider.size = new Vector3(size.x, size.y, 0.02f);
         // ColliderSurface raycasts the collider directly, so keeping it a trigger keeps these
@@ -90,7 +88,8 @@ public class WorldButton : MonoBehaviour
         _label.enableAutoSizing = false;
         _label.textWrappingMode = TextWrappingModes.NoWrap;
         _label.color = Color.white;
-        _label.rectTransform.sizeDelta = new Vector2(size.x, size.y);
+        _labelArea = new Vector2(size.x * 0.82f, size.y * 0.55f);
+        _label.rectTransform.sizeDelta = _labelArea;
     }
 
     void Start()
@@ -99,24 +98,49 @@ public class WorldButton : MonoBehaviour
     }
 
     /// <summary>
-    /// TMP's auto-sizing does not reliably clamp to a rect this small, so measure the glyph
-    /// bounds at a known font size and scale to whichever of width or height binds first.
+    /// Repositions and resizes the text box, for rows that put something else beside the label.
+    /// Wrapping lets a long name use two lines rather than shrinking to fit on one.
+    /// </summary>
+    public void SetLabelArea(Vector3 localPosition, Vector2 area, bool wrap, TextAlignmentOptions alignment)
+    {
+        if (_label == null)
+            return;
+
+        _labelArea = area;
+        _label.transform.localPosition = localPosition;
+        _label.rectTransform.sizeDelta = area;
+        _label.textWrappingMode = wrap ? TextWrappingModes.Normal : TextWrappingModes.NoWrap;
+        _label.alignment = alignment;
+        FitLabel();
+    }
+
+    /// <summary>
+    /// TMP's auto-sizing does not reliably clamp to a rect this small. Binary searching the
+    /// font size against the measured glyph bounds does, and unlike scaling from a single
+    /// measurement it also works when wrapping changes the line count as the size changes.
     /// </summary>
     void FitLabel()
     {
         if (_label == null || string.IsNullOrEmpty(_label.text))
             return;
 
-        _label.fontSize = 1f;
-        _label.ForceMeshUpdate(true, true);
+        var low = 0.01f;
+        var high = 2f;
 
-        var bounds = _label.textBounds.size;
-        if (bounds.x <= 0.0001f || bounds.y <= 0.0001f)
-            return;
+        for (var iteration = 0; iteration < 14; iteration++)
+        {
+            var middle = (low + high) * 0.5f;
+            _label.fontSize = middle;
+            _label.ForceMeshUpdate(true, true);
 
-        var byWidth = _size.x * 0.82f / bounds.x;
-        var byHeight = _size.y * 0.46f / bounds.y;
-        _label.fontSize = Mathf.Min(byWidth, byHeight);
+            var bounds = _label.textBounds.size;
+            if (bounds.x <= _labelArea.x && bounds.y <= _labelArea.y)
+                low = middle;
+            else
+                high = middle;
+        }
+
+        _label.fontSize = low;
         _label.ForceMeshUpdate(true, true);
     }
 
