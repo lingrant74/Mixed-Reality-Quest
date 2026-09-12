@@ -69,10 +69,11 @@ class DashboardTests(unittest.TestCase):
         self.assertEqual([s['part_ids'] for s in steps],[[p['id']] for p in parts])
         self.assertEqual([s['supporting_part_ids'] for s in steps],
             [[],[],[],[parts[0]['id'],parts[1]['id']],[parts[1]['id'],parts[2]['id']],[parts[3]['id'],parts[4]['id']]])
-        self.assertEqual([s['opening_direction'] for s in steps],['up']*6)
+        self.assertEqual([s['opening_direction'] for s in steps],['up','up','up','down','down','up'])
         self.assertTrue(all(s['model_version']=='v1' for s in steps))
         self.assertEqual(steps[0]['instructions'],'Place the first red cup at the left side of the bottom row.')
-        self.assertEqual(steps[5]['instructions'],'Place the sixth red cup at the top of the pyramid above the two middle-row cups.')
+        self.assertEqual(steps[3]['instructions'],'Place the fourth red cup upside down above the gap between the first and second cups.')
+        self.assertEqual(steps[5]['instructions'],'Place the sixth red cup upright on top of the two inverted middle-row cups.')
     def test_six_cup_fixture_has_six_parts(self):
         parts=validate_glb(Path(__file__).with_name('dashboard-demo-6cup.glb').read_bytes())
         self.assertEqual([p['name'] for p in parts],[f'Cup_{i+1}' for i in range(6)])

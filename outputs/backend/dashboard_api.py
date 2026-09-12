@@ -227,9 +227,9 @@ HARDCODED_CUP_STEPS = [
     ('Place the first red cup at the left side of the bottom row.','up',()),
     ('Place the second red cup beside the first cup in the center of the bottom row.','up',()),
     ('Place the third red cup beside the second cup to complete the bottom row.','up',()),
-    ('Place the fourth red cup above the gap between the first and second cups.','up',(0,1)),
-    ('Place the fifth red cup above the gap between the second and third cups.','up',(1,2)),
-    ('Place the sixth red cup at the top of the pyramid above the two middle-row cups.','up',(3,4)),
+    ('Place the fourth red cup upside down above the gap between the first and second cups.','down',(0,1)),
+    ('Place the fifth red cup upside down above the gap between the second and third cups.','down',(1,2)),
+    ('Place the sixth red cup upright on top of the two inverted middle-row cups.','up',(3,4)),
 ]
 
 

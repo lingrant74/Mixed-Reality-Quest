@@ -89,10 +89,10 @@ with httpx.Client(base_url='http://127.0.0.1:8000',timeout=40,trust_env=False) a
   cup_texts=['Place the first red cup at the left side of the bottom row.',
    'Place the second red cup beside the first cup in the center of the bottom row.',
    'Place the third red cup beside the second cup to complete the bottom row.',
-   'Place the fourth red cup above the gap between the first and second cups.',
-   'Place the fifth red cup above the gap between the second and third cups.',
-   'Place the sixth red cup at the top of the pyramid above the two middle-row cups.']
-  cup_directions=['up']*6
+   'Place the fourth red cup upside down above the gap between the first and second cups.',
+   'Place the fifth red cup upside down above the gap between the second and third cups.',
+   'Place the sixth red cup upright on top of the two inverted middle-row cups.']
+  cup_directions=['up','up','up','down','down','up']
   p2=call('POST',url2+'/source?revision='+str(p2['revision'])+'&filename=Stacked%20Cup%20Assembly.f3z',content=b'fake-cup-assembly-f3z');assets.append(p2['model']['source']['url'])
   assert [s['instructions'] for s in p2['draft']['steps']]==cup_texts
   assert [s['opening_direction'] for s in p2['draft']['steps']]==cup_directions

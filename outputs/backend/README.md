@@ -85,9 +85,10 @@ Then open **http://127.0.0.1:8000/dashboard** in a browser.
    **MVP note:** uploading a source file does not actually parse it. It calls
    `generate_hardcoded_fusion_instructions()` in `dashboard_api.py`, which
    always emits the same fixed six-cup, 3-2-1 pyramid sequence into the draft,
-   replacing whatever steps were there. All cups are upright; the middle cups
-   depend on their two neighboring bottom cups and the top cup depends on both
-   middle cups. If the current model already has exactly six detected GLB
+   replacing whatever steps were there. The bottom three and top cup are
+   upright, while both middle cups are inverted. The middle cups depend on
+   their two neighboring bottom cups and the top cup depends on both middle
+   cups. If the current model already has exactly six detected GLB
    parts, those six parts are mapped onto the six steps in detection order
    automatically; otherwise every step is left unmapped and flagged for
    review — the app never invents a mapping for the wrong part count.
