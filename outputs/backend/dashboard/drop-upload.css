@@ -38,8 +38,137 @@
   display: grid;
 }
 
+#model-picker-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: #16241fcc;
+}
+
+.model-picker-card {
+  width: min(680px, 100%);
+  padding: 26px;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 20px 60px #0a1b1240;
+}
+
+.model-picker-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.model-picker-head button {
+  padding: 4px 10px;
+  font-size: 16px;
+}
+
+.model-option {
+  width: 100%;
+  margin: 22px 0;
+  padding: 18px;
+  display: grid;
+  grid-template-columns: 120px 1fr auto;
+  align-items: center;
+  gap: 18px;
+  text-align: left;
+  border: 1px solid #d7e3d5;
+  background: #f6f8f2;
+}
+
+.model-option:hover {
+  border-color: #80a681;
+  background: #eef5e8;
+}
+
+.model-option strong,
+.model-option small {
+  display: block;
+}
+
+.model-option strong {
+  margin-bottom: 7px;
+  color: #243e32;
+  font-size: 15px;
+}
+
+.model-option small {
+  color: #718277;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.model-option b {
+  color: #266a51;
+  font-size: 12px;
+}
+
+.model-option-preview {
+  height: 90px;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 3px;
+  place-items: center;
+}
+
+.model-option-preview i {
+  width: 25px;
+  height: 29px;
+  display: block;
+  border: 2px solid #9e1931;
+  border-radius: 3px 3px 8px 8px;
+  background: #cf2141;
+}
+
+.model-option-preview i:nth-child(1) { grid-area: 3 / 1 / 4 / 3; }
+.model-option-preview i:nth-child(2) { grid-area: 3 / 3 / 4 / 5; }
+.model-option-preview i:nth-child(3) { grid-area: 3 / 5 / 4 / 7; }
+.model-option-preview i:nth-child(4) { grid-area: 2 / 2 / 3 / 4; transform: rotate(180deg); }
+.model-option-preview i:nth-child(5) { grid-area: 2 / 4 / 3 / 6; transform: rotate(180deg); }
+.model-option-preview i:nth-child(6) { grid-area: 1 / 3 / 2 / 5; }
+
+.model-picker-footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-top: 18px;
+  border-top: 1px solid #e0e5e0;
+  color: #718277;
+  font-size: 11px;
+}
+
+.model-picker-footer label {
+  margin: 0 0 0 auto;
+}
+
+.model-picker-footer a {
+  font-size: 11px;
+}
+
 @media (max-width: 650px) {
   .model-actions {
     justify-content: flex-start;
+  }
+
+  .model-option {
+    grid-template-columns: 90px 1fr;
+  }
+
+  .model-option b {
+    display: none;
+  }
+
+  .model-picker-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .model-picker-footer label {
+    margin-left: 0;
   }
 }

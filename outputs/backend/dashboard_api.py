@@ -281,6 +281,12 @@ async def upload_model(pid:str,revision:int,request:Request,filename:str|None=No
         return await run_in_threadpool(attach_model,pid,revision,data,filename)
 
 
+@router.post('/dashboard/api/products/{pid}/demo-model')
+def use_stacked_red_cups_demo(pid:str,revision:int):
+    data=Path(__file__).with_name('dashboard-demo-6cup.glb').read_bytes()
+    return attach_model(pid,revision,data,'stacked-red-cups-demo.glb')
+
+
 def attach_source(pid,revision,data,filename):
     p=product(pid);check_revision(p,revision)
     fmt=source_format(filename)

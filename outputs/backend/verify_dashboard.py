@@ -9,7 +9,7 @@ from instructions import collection
 from dashboard_api import FILES
 
 root=Path(__file__).resolve().parent
-report={};assets=[];pid=None;pid2=None;pid3=None
+report={};assets=[];pid=None;pid2=None;pid3=None;pid4=None
 with httpx.Client(base_url='http://127.0.0.1:8000',timeout=40,trust_env=False) as c:
  def call(method,url,status=200,**kwargs):
   r=c.request(method,url,**kwargs)
@@ -21,6 +21,11 @@ with httpx.Client(base_url='http://127.0.0.1:8000',timeout=40,trust_env=False) a
   assert demo_download.headers['content-type']=='model/gltf-binary'
   assert demo_download.content==(root/'dashboard-demo-6cup.glb').read_bytes()
   report['reusable_six_cup_glb_download']=True
+  p4=call('POST','/dashboard/api/products',201);pid4=p4['_id'];url4='/dashboard/api/products/'+pid4
+  p4=call('POST',url4+'/demo-model?revision='+str(p4['revision']));assets.append(p4['model']['url'])
+  assert p4['model']['filename']=='stacked-red-cups-demo.glb'
+  assert [part['name'] for part in p4['model']['parts']]==[f'Cup_{i}' for i in range(1,7)]
+  report['website_model_library_selects_six_cup_glb']=True
   seed=call('GET','/instructions/assembly-1')
   p=call('POST','/dashboard/api/products',201);pid=p['_id'];url='/dashboard/api/products/'+pid;iid='product_'+pid
   call('GET','/instructions/'+iid,404)
@@ -135,6 +140,7 @@ with httpx.Client(base_url='http://127.0.0.1:8000',timeout=40,trust_env=False) a
   if pid: collection().database.products.delete_one({'_id':pid})
   if pid2: collection().database.products.delete_one({'_id':pid2})
   if pid3: collection().database.products.delete_one({'_id':pid3})
+  if pid4: collection().database.products.delete_one({'_id':pid4})
   for asset in assets:
    filename=asset.rsplit('/',1)[-1]
    collection().database.assets.delete_one({'_id':filename});(FILES/filename).unlink(missing_ok=True)

@@ -1,5 +1,6 @@
 {
   "reusable_six_cup_glb_download": true,
+  "website_model_library_selects_six_cup_glb": true,
   "draft_hidden": true,
   "invalid_uploads_and_size_rejected": true,
   "source_asset_stored_and_retrievable": true,

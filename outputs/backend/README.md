@@ -73,11 +73,14 @@ Then open **http://127.0.0.1:8000/dashboard** in a browser.
 **Workflow in the UI:**
 
 1. **Create product** → gives you an empty draft.
-2. **Upload GLB** → choose a file or drag it directly onto the Product Model
-   preview. It is validated (binary glTF 2.0, embedded resources only, no
+2. **Choose GLB** → opens the website model library rather than the Mac file
+   picker. Select **Stacked red cups** to attach the bundled six-part demo
+   immediately. The library also offers **Upload from Mac** for later custom
+   models, and a local file can still be dragged directly onto the Product
+   Model preview. Every model is validated (binary glTF 2.0, embedded resources only, no
    Draco/Meshopt/KTX2/required extensions, ≤2,000 nodes, ≤50 MiB) and rendered
    in the 3D preview; each mesh part gets a stable ID (`part_<modelVersion>_<nodeIndex>`).
-   The **Download six-cup demo** link provides a reusable, valid GLB with six
+   The **Download demo GLB** link provides the same reusable, valid GLB with six
    individually addressable cup nodes. Download it once, then drag it into any
    product draft that should use the current demo assembly.
 3. **Upload source CAD** → the manufacturer's authoritative design file

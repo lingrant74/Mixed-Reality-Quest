@@ -39,6 +39,12 @@ $('remove-thumb').onclick=()=>{current.draft.thumbnail_url=null;mark();renderEdi
 async function modelUpload(file){if(!file.name.toLowerCase().endsWith('.glb'))throw Error('Drop a GLB model file here.');if(file.size>50*1024*1024)throw Error('GLB exceeds the 50 MiB upload limit.');await save();notice('Validating and uploading your model…');current=await request(`${api}/products/${current._id}/model?revision=${current.revision}&filename=${encodeURIComponent(file.name)}`,{method:'POST',headers:{'Content-Type':'model/gltf-binary'},body:file});renderEditor();
 const allMapped=current.draft.steps.length&&current.draft.steps.every(s=>s.model_version===current.model.version&&s.part_ids.length);
 notice(allMapped?`Model saved with ${current.model.parts.length} detected parts, and existing step mappings are up to date.`:'Model saved. Review any existing step mappings before publishing.');}
+$('choose-model').onclick=()=>{$('model-picker-modal').hidden=false;};
+$('model-picker-close').onclick=()=>{$('model-picker-modal').hidden=true;};
+$('model-picker-modal').onclick=e=>{if(e.target===$('model-picker-modal'))$('model-picker-modal').hidden=true;};
+$('select-six-cup').onclick=()=>run(async()=>{await save();notice('Adding the six-cup model…');current=await request(`${api}/products/${current._id}/demo-model?revision=${current.revision}`,{method:'POST'});$('model-picker-modal').hidden=true;renderEditor();
+const allMapped=current.draft.steps.length&&current.draft.steps.every(s=>s.model_version===current.model.version&&s.part_ids.length);
+notice(!current.draft.steps.length?'Six-cup model added. Upload source CAD to generate the six demo steps.':allMapped?'Six-cup model added with all 6 step mappings ready.':'Six-cup model added. Review existing step mappings before publishing.');});
 $('model-file').onchange=e=>{const file=e.target.files[0];if(file)run(()=>modelUpload(file));e.target.value='';};
 for(const event of ['dragenter','dragover'])$('viewport').addEventListener(event,e=>{e.preventDefault();if(!busy)$('viewport').classList.add('dragover');});
 for(const event of ['dragleave','drop'])$('viewport').addEventListener(event,e=>{e.preventDefault();$('viewport').classList.remove('dragover');});
@@ -105,4 +111,5 @@ $('viewer-prev').onclick=()=>goToViewerStep(viewerStep-1);
 $('viewer-next').onclick=()=>goToViewerStep(viewerStep+1);
 
 addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue='';}});
+addEventListener('keydown',e=>{if(e.key==='Escape')$('model-picker-modal').hidden=true;});
 run(library);
