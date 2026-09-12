@@ -73,9 +73,13 @@ Then open **http://127.0.0.1:8000/dashboard** in a browser.
 **Workflow in the UI:**
 
 1. **Create product** → gives you an empty draft.
-2. **Upload GLB** → validated (binary glTF 2.0, embedded resources only, no
+2. **Upload GLB** → choose a file or drag it directly onto the Product Model
+   preview. It is validated (binary glTF 2.0, embedded resources only, no
    Draco/Meshopt/KTX2/required extensions, ≤2,000 nodes, ≤50 MiB) and rendered
    in the 3D preview; each mesh part gets a stable ID (`part_<modelVersion>_<nodeIndex>`).
+   The **Download six-cup demo** link provides a reusable, valid GLB with six
+   individually addressable cup nodes. Download it once, then drag it into any
+   product draft that should use the current demo assembly.
 3. **Upload source CAD** → the manufacturer's authoritative design file
    (`.f3z`/`.f3d`, ≤300 MiB). It is stored and made downloadable as-is —
    never parsed or rendered — and is **required before publishing**. Adding
@@ -99,20 +103,13 @@ Then open **http://127.0.0.1:8000/dashboard** in a browser.
    the dashboard, manifest, viewer, or publish pipeline needs to change when
    that parser replaces it.
 
-   **No real "Stacked Cup Assembly" GLB with six cup nodes exists anywhere in
-   this project.** The only prior fixture (`dashboard-demo.glb`) has three
-   unrelated parts (Foundation/Column/Display cap) and was explicitly a
-   temporary stand-in. For testing the six-cup flow, `dashboard-demo-6cup.glb`
-   was built as a synthetic six-node box fixture (`Cup_1`..`Cup_6`) — it is not
-   a real Fusion export. The dashboard detects that exact fixture and replaces
-   its boxes visually with lightweight procedural red cup meshes in a centered
-   3-2-1 pyramid. The generated cups keep the fixture's six backend part IDs,
-   so the generic step mapping and cumulative visibility code remains in use.
-   Other GLBs, including a future real cup export, render their own geometry.
-   Before wiring this up to a real manufacturer asset, re-export the actual
-   Fusion assembly to GLB with all six cup occurrences as separate addressable
-   nodes; if the export has fewer than six, the app will correctly refuse to
-   guess and will flag every step for review instead.
+   `dashboard-demo-6cup.glb` is the reusable MVP render asset. It contains real
+   open cup geometry with six nodes (`Cup_1`..`Cup_6`) in the corrected 3-2-1
+   arrangement: bottom cups upright, middle cups inverted, and top cup upright.
+   Its node transforms and mesh data live in the GLB itself, so the same model
+   works outside the dashboard rather than relying on browser-only replacement
+   geometry. `dashboard-demo.glb` remains a separate three-part validation
+   fixture. GLBs with the wrong part count are still left unmapped for review.
 4. **Review/edit steps** — instruction text, orientation text, opening
    direction (`up`/`down`, required by the current Unity schema), the parts
    introduced in that step, and optional supporting parts from earlier steps.

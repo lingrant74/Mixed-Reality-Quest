@@ -16,6 +16,11 @@ with httpx.Client(base_url='http://127.0.0.1:8000',timeout=40,trust_env=False) a
   assert r.status_code==status,(url,r.status_code,r.text[:800])
   return r.json()
  try:
+  demo_download=c.get('/dashboard/demo/stacked-red-cups.glb')
+  assert demo_download.status_code==200
+  assert demo_download.headers['content-type']=='model/gltf-binary'
+  assert demo_download.content==(root/'dashboard-demo-6cup.glb').read_bytes()
+  report['reusable_six_cup_glb_download']=True
   seed=call('GET','/instructions/assembly-1')
   p=call('POST','/dashboard/api/products',201);pid=p['_id'];url='/dashboard/api/products/'+pid;iid='product_'+pid
   call('GET','/instructions/'+iid,404)

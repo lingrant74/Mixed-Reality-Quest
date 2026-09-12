@@ -110,6 +110,13 @@ def create_product():
 def get_product(pid:str): return product(pid)
 
 
+@router.get('/dashboard/demo/stacked-red-cups.glb')
+def stacked_red_cups_demo():
+    return FileResponse(Path(__file__).with_name('dashboard-demo-6cup.glb'),media_type='model/gltf-binary',
+                        filename='stacked-red-cups-demo.glb',
+                        headers={'X-Content-Type-Options':'nosniff'})
+
+
 @router.put('/dashboard/api/products/{pid}')
 def save_product(pid:str, body:SaveRequest):
     p=product(pid);check_revision(p,body.revision)

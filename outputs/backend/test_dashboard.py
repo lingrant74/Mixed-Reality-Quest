@@ -1,4 +1,6 @@
 import copy
+import json
+import struct
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -75,5 +77,14 @@ class DashboardTests(unittest.TestCase):
         self.assertEqual(steps[3]['instructions'],'Place the fourth red cup upside down above the gap between the first and second cups.')
         self.assertEqual(steps[5]['instructions'],'Place the sixth red cup upright on top of the two inverted middle-row cups.')
     def test_six_cup_fixture_has_six_parts(self):
-        parts=validate_glb(Path(__file__).with_name('dashboard-demo-6cup.glb').read_bytes())
+        data=Path(__file__).with_name('dashboard-demo-6cup.glb').read_bytes()
+        parts=validate_glb(data)
         self.assertEqual([p['name'] for p in parts],[f'Cup_{i+1}' for i in range(6)])
+        json_size,json_kind=struct.unpack_from('<II',data,12)
+        self.assertEqual(json_kind,0x4e4f534a)
+        gltf=json.loads(data[20:20+json_size])
+        self.assertEqual(gltf['asset']['generator'],'Assembly Studio reusable six-cup demo')
+        self.assertGreater(gltf['accessors'][0]['count'],1000)
+        self.assertEqual([n.get('rotation') for n in gltf['nodes']],
+            [None,None,None,[1,0,0,0],[1,0,0,0],None])
+        self.assertEqual([n['translation'][1] for n in gltf['nodes']],[0,0,0,2.35,2.35,4.7])

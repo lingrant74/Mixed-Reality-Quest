@@ -36,17 +36,21 @@ async function imageUpload(file){if(file.size>8*1024*1024)throw Error('Image exc
 $('steps').onchange=e=>{if(e.target.dataset.target===undefined)return;const i=Number(e.target.dataset.target),file=e.target.files[0];if(file)run(async()=>{const asset=await imageUpload(file);current.draft.steps[i].target_image_url=asset.url;mark();renderSteps();notice('Target image uploaded. Save the draft to keep this step mapping.');});};
 $('thumb-file').onchange=e=>{const file=e.target.files[0];if(file)run(async()=>{const asset=await imageUpload(file);current.draft.thumbnail_url=asset.url;mark();renderEditor();notice('Thumbnail uploaded. Save your draft to keep it.');});e.target.value='';};
 $('remove-thumb').onclick=()=>{current.draft.thumbnail_url=null;mark();renderEditor();};
-$('model-file').onchange=e=>{const file=e.target.files[0];if(file)run(async()=>{if(file.size>50*1024*1024)throw Error('GLB exceeds the 50 MiB upload limit.');await save();notice('Validating and uploading your model…');current=await request(`${api}/products/${current._id}/model?revision=${current.revision}&filename=${encodeURIComponent(file.name)}`,{method:'POST',headers:{'Content-Type':'model/gltf-binary'},body:file});renderEditor();
+async function modelUpload(file){if(!file.name.toLowerCase().endsWith('.glb'))throw Error('Drop a GLB model file here.');if(file.size>50*1024*1024)throw Error('GLB exceeds the 50 MiB upload limit.');await save();notice('Validating and uploading your model…');current=await request(`${api}/products/${current._id}/model?revision=${current.revision}&filename=${encodeURIComponent(file.name)}`,{method:'POST',headers:{'Content-Type':'model/gltf-binary'},body:file});renderEditor();
 const allMapped=current.draft.steps.length&&current.draft.steps.every(s=>s.model_version===current.model.version&&s.part_ids.length);
-notice(allMapped?`Model saved with ${current.model.parts.length} detected parts, and existing step mappings are up to date.`:'Model saved. Review any existing step mappings before publishing.');});e.target.value='';};
+notice(allMapped?`Model saved with ${current.model.parts.length} detected parts, and existing step mappings are up to date.`:'Model saved. Review any existing step mappings before publishing.');}
+$('model-file').onchange=e=>{const file=e.target.files[0];if(file)run(()=>modelUpload(file));e.target.value='';};
+for(const event of ['dragenter','dragover'])$('viewport').addEventListener(event,e=>{e.preventDefault();if(!busy)$('viewport').classList.add('dragover');});
+for(const event of ['dragleave','drop'])$('viewport').addEventListener(event,e=>{e.preventDefault();$('viewport').classList.remove('dragover');});
+$('viewport').addEventListener('drop',e=>{const file=e.dataTransfer.files[0];if(file)run(()=>modelUpload(file));});
 $('source-file').onchange=e=>{const file=e.target.files[0];if(file)run(async()=>{if(file.size>300*1024*1024)throw Error('Source CAD file exceeds the 300 MiB upload limit.');await save();notice('Storing your source CAD file…');current=await request(`${api}/products/${current._id}/source?revision=${current.revision}&filename=${encodeURIComponent(file.name)}`,{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:file});renderEditor();
 const mapped=current.model?.parts?.length===6&&current.draft.steps.every(s=>s.part_ids.length);
 notice(mapped?'Generated 6 assembly steps, mapped to your uploaded model.':'Generated 6 assembly steps. Part mappings need review — upload a GLB with exactly six detected parts.',!mapped);});e.target.value='';};
 function initViewer(){if(renderer)return;renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setClearColor(0,0);$('viewport').appendChild(renderer.domElement);scene=new THREE.Scene();camera=new THREE.PerspectiveCamera(40,1,.01,10000);controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;scene.add(new THREE.HemisphereLight(0xffffff,0x758168,3));const light=new THREE.DirectionalLight(0xffffff,3);light.position.set(4,7,5);scene.add(light);new ResizeObserver(()=>{const w=$('viewport').clientWidth,h=$('viewport').clientHeight;if(!w||!h)return;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();}).observe($('viewport'));renderer.setAnimationLoop(()=>{if($('editor-screen').hidden)return;controls.update();renderer.render(scene,camera);});}
 
-// Demo-only visualization. The checked-in six-part GLB is intentionally a box
-// fixture for upload/mapping tests, so replace only that exact fixture in the
-// browser. Real manufacturer GLBs continue through the generic loader below.
+// Backward compatibility for synthetic demo files uploaded before the reusable
+// cup GLB gained real geometry. New demo downloads and manufacturer GLBs render
+// their own mesh data through the generic loader below.
 const DEMO_FIXTURE_GENERATOR='Assembly Studio synthetic test fixture';
 const DEMO_CUP=Object.freeze({height:2.35,topRadius:.78,bottomRadius:.54,rimRadius:.065,
 horizontalSpacing:1.5,radialSegments:48});
