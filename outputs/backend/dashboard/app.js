@@ -42,9 +42,10 @@ notice(allMapped?`Model saved with ${current.model.parts.length} detected parts,
 $('choose-model').onclick=()=>{$('model-picker-modal').hidden=false;};
 $('model-picker-close').onclick=()=>{$('model-picker-modal').hidden=true;};
 $('model-picker-modal').onclick=e=>{if(e.target===$('model-picker-modal'))$('model-picker-modal').hidden=true;};
-$('select-six-cup').onclick=()=>run(async()=>{await save();notice('Adding the six-cup model…');current=await request(`${api}/products/${current._id}/demo-model?revision=${current.revision}`,{method:'POST'});$('model-picker-modal').hidden=true;renderEditor();
+$('select-six-cup').onclick=()=>run(async()=>{const modal=$('model-picker-modal'),button=$('select-six-cup');modal.classList.add('uploading');button.disabled=true;button.querySelector('span').textContent='Uploading…';
+try{await save();notice('Uploading the six-cup GLB…');const [product]=await Promise.all([request(`${api}/products/${current._id}/demo-model?revision=${current.revision}`,{method:'POST'}),new Promise(resolve=>setTimeout(resolve,1000))]);current=product;modal.hidden=true;renderEditor();
 const allMapped=current.draft.steps.length&&current.draft.steps.every(s=>s.model_version===current.model.version&&s.part_ids.length);
-notice(!current.draft.steps.length?'Six-cup model added. Upload source CAD to generate the six demo steps.':allMapped?'Six-cup model added with all 6 step mappings ready.':'Six-cup model added. Review existing step mappings before publishing.');});
+notice(!current.draft.steps.length?'GLB uploaded. Upload source CAD to generate the six demo steps.':allMapped?'GLB uploaded with all 6 step mappings ready.':'GLB uploaded. Review existing step mappings before publishing.');}finally{modal.classList.remove('uploading');button.disabled=false;button.querySelector('span').textContent='Upload';}});
 $('model-file').onchange=e=>{const file=e.target.files[0];if(file)run(()=>modelUpload(file));e.target.value='';};
 for(const event of ['dragenter','dragover'])$('viewport').addEventListener(event,e=>{e.preventDefault();if(!busy)$('viewport').classList.add('dragover');});
 for(const event of ['dragleave','drop'])$('viewport').addEventListener(event,e=>{e.preventDefault();$('viewport').classList.remove('dragover');});
