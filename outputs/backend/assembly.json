@@ -1,0 +1,35 @@
+{
+  "instruction_id": "assembly-1",
+  "title": "Six interchangeable cups",
+  "pieces": [],
+  "rules": {
+    "bottom": "Three cups, openings down, on the table.",
+    "middle": "Two cups, openings up, each bridging adjacent bottom cups.",
+    "top": "One cup, opening down, bridging the middle cups.",
+    "ignore": "Cup identity, logo rotation, background, lighting, framing, and order within a layer.",
+    "uncertainty": "Do not infer hidden placement, count, orientation or support."
+  },
+  "steps": [
+    {
+      "index": 0,
+      "required_layers": [
+        "bottom"
+      ]
+    },
+    {
+      "index": 1,
+      "required_layers": [
+        "bottom",
+        "middle"
+      ]
+    },
+    {
+      "index": 2,
+      "required_layers": [
+        "bottom",
+        "middle",
+        "top"
+      ]
+    }
+  ]
+}

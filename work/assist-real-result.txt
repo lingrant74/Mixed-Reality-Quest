@@ -1,0 +1,9 @@
+HTTP round-trip latency: 4.363 seconds
+{
+  "request_id": "test-request-1",
+  "step_index": 0,
+  "guidance": "Place the red block at the current ghost target in Unity to confirm the assembly anchor. Placement remains unverified; use Unity's placement checks.",
+  "highlight_piece_ids": [],
+  "audio_url": null,
+  "mock": false
+}

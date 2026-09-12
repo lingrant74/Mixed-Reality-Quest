@@ -1,0 +1,11 @@
+HTTP round-trip latency: 18.090 seconds
+{
+  "request_id": "test-request-1",
+  "step_index": 2,
+  "guidance": "Show a clear view of the physical cups; rendered overlays are not placement evidence.",
+  "highlight_piece_ids": [],
+  "audio_url": null,
+  "mock": false,
+  "status": "uncertain",
+  "advance_step": false
+}

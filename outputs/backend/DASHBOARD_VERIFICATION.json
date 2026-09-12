@@ -1,0 +1,10 @@
+{
+  "draft_hidden": true,
+  "invalid_uploads_and_size_rejected": true,
+  "save_reload": true,
+  "stale_revision_rejected": true,
+  "publish_and_http_assets": true,
+  "invalid_draft_preserves_publication": true,
+  "model_replacement_requires_review": true,
+  "seed_and_health_unchanged": true
+}

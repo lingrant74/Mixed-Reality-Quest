@@ -1,0 +1,82 @@
+[
+  {
+    "photo": 1,
+    "expected": "incorrect",
+    "latency_seconds": 8.725,
+    "http_status": 200,
+    "response": {
+      "request_id": "71786f05b1034962ad4ead6aa8009fc4",
+      "step_index": 2,
+      "guidance": "Show a clearer view of the bottom, middle, top layer(s), including cup orientation and supports.",
+      "highlight_piece_ids": [],
+      "audio_url": null,
+      "mock": false,
+      "status": "uncertain",
+      "advance_step": false
+    }
+  },
+  {
+    "photo": 2,
+    "expected": "incorrect",
+    "latency_seconds": 8.46,
+    "http_status": 200,
+    "response": {
+      "request_id": "b32a3600b0ec4e95844a23e12a66d448",
+      "step_index": 2,
+      "guidance": "Show a clearer view of the bottom, middle, top layer(s), including cup orientation and supports.",
+      "highlight_piece_ids": [],
+      "audio_url": null,
+      "mock": false,
+      "status": "uncertain",
+      "advance_step": false
+    }
+  },
+  {
+    "photo": 3,
+    "expected": "correct",
+    "latency_seconds": 8.365,
+    "http_status": 200,
+    "response": {
+      "request_id": "cd4ba5f8582b42e995b83d210a6d3240",
+      "step_index": 2,
+      "guidance": "Show a clearer view of the bottom, middle, top layer(s), including cup orientation and supports.",
+      "highlight_piece_ids": [],
+      "audio_url": null,
+      "mock": false,
+      "status": "uncertain",
+      "advance_step": false
+    }
+  },
+  {
+    "photo": 4,
+    "expected": "correct",
+    "latency_seconds": 8.418,
+    "http_status": 200,
+    "response": {
+      "request_id": "7d92fbb9b7dd451a80135ef338e21ced",
+      "step_index": 2,
+      "guidance": "Show a clearer view of the bottom, middle, top layer(s), including cup orientation and supports.",
+      "highlight_piece_ids": [],
+      "audio_url": null,
+      "mock": false,
+      "status": "uncertain",
+      "advance_step": false
+    }
+  },
+  {
+    "photo": 5,
+    "expected": "incorrect",
+    "latency_seconds": 8.361,
+    "http_status": 200,
+    "response": {
+      "request_id": "01647df0576a451290cf88955a00630e",
+      "step_index": 2,
+      "guidance": "Show a clearer view of the bottom, middle, top layer(s), including cup orientation and supports.",
+      "highlight_piece_ids": [],
+      "audio_url": null,
+      "mock": false,
+      "status": "uncertain",
+      "advance_step": false
+    }
+  }
+]

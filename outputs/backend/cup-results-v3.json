@@ -1,0 +1,82 @@
+[
+  {
+    "photo": 1,
+    "expected": "incorrect",
+    "latency_seconds": 14.461,
+    "http_status": 200,
+    "response": {
+      "request_id": "e2fb1991cee04ea6ae02845f52874272",
+      "step_index": 2,
+      "guidance": "All three layers look correct.",
+      "highlight_piece_ids": [],
+      "audio_url": null,
+      "mock": false,
+      "status": "correct",
+      "advance_step": true
+    }
+  },
+  {
+    "photo": 2,
+    "expected": "incorrect",
+    "latency_seconds": 9.484,
+    "http_status": 200,
+    "response": {
+      "request_id": "12710e544c684025b4dd0a7e77e5b094",
+      "step_index": 2,
+      "guidance": "All three layers look correct.",
+      "highlight_piece_ids": [],
+      "audio_url": null,
+      "mock": false,
+      "status": "correct",
+      "advance_step": true
+    }
+  },
+  {
+    "photo": 3,
+    "expected": "correct",
+    "latency_seconds": 9.602,
+    "http_status": 200,
+    "response": {
+      "request_id": "903676fd54fc4564b84962001b361846",
+      "step_index": 2,
+      "guidance": "All three layers look correct.",
+      "highlight_piece_ids": [],
+      "audio_url": null,
+      "mock": false,
+      "status": "correct",
+      "advance_step": true
+    }
+  },
+  {
+    "photo": 4,
+    "expected": "correct",
+    "latency_seconds": 9.43,
+    "http_status": 200,
+    "response": {
+      "request_id": "acf2c66360fb4ea8b439c74969ed43e3",
+      "step_index": 2,
+      "guidance": "All three layers look correct.",
+      "highlight_piece_ids": [],
+      "audio_url": null,
+      "mock": false,
+      "status": "correct",
+      "advance_step": true
+    }
+  },
+  {
+    "photo": 5,
+    "expected": "incorrect",
+    "latency_seconds": 9.532,
+    "http_status": 200,
+    "response": {
+      "request_id": "42e2022697d446faa7ce9bc6702bdc0a",
+      "step_index": 2,
+      "guidance": "Show a clearer view of the bottom layer(s), including cup orientation and supports.",
+      "highlight_piece_ids": [],
+      "audio_url": null,
+      "mock": false,
+      "status": "uncertain",
+      "advance_step": false
+    }
+  }
+]

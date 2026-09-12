@@ -1,0 +1,20 @@
+{
+  "latency_seconds": 41.422,
+  "result": {
+    "model": "qwen3-vl:8b-instruct",
+    "created_at": "2026-09-12T16:11:47.701028764Z",
+    "message": {
+      "role": "assistant",
+      "content": "This is a screen capture of a GitHub repository page for \u201cMixed-Reality-Quest,\u201d showing setup instructions and code snippets. It is a rendered digital image, not a photograph of physical objects."
+    },
+    "done": true,
+    "done_reason": "stop",
+    "total_duration": 41407665169,
+    "load_duration": 18113721348,
+    "prompt_eval_count": 2331,
+    "prompt_eval_cached_count": 0,
+    "prompt_eval_duration": 21455025000,
+    "eval_count": 40,
+    "eval_duration": 1785353000
+  }
+}

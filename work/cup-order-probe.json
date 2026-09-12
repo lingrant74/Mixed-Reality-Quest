@@ -1,0 +1,20 @@
+{
+  "latency_seconds": 14.328547980001531,
+  "result": {
+    "model": "qwen3-vl:8b-instruct",
+    "created_at": "2026-09-12T16:47:21.634240707Z",
+    "message": {
+      "role": "assistant",
+      "content": "{\n  \"observation\": \"Bottom: three cups with wide open rims facing up. Middle: two cups with wide open rims facing up. Top: one cup with wide open rim facing up.\",\n  \"scene\": \"rendered_only\",\n  \"bottom\": {\n    \"count\": \"uncertain\",\n    \"orientation\": \"uncertain\",\n    \"bridging\": \"uncertain\"\n  },\n  \"middle\": {\n    \"count\": \"uncertain\",\n    \"orientation\": \"uncertain\",\n    \"bridging\": \"uncertain\"\n  },\n  \"top\": {\n    \"count\": \"uncertain\",\n    \"orientation\": \"uncertain\",\n    \"bridging\": \"uncertain\"\n  }\n}"
+    },
+    "done": true,
+    "done_reason": "stop",
+    "total_duration": 14237610530,
+    "load_duration": 79705607,
+    "prompt_eval_count": 6878,
+    "prompt_eval_cached_count": 13,
+    "prompt_eval_duration": 9030523000,
+    "eval_count": 147,
+    "eval_duration": 4463999000
+  }
+}

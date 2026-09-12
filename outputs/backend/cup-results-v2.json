@@ -1,0 +1,82 @@
+[
+  {
+    "photo": 1,
+    "expected": "incorrect",
+    "latency_seconds": 14.323,
+    "http_status": 200,
+    "response": {
+      "request_id": "55dfe19b47684d1ca82a2fda2a2292d9",
+      "step_index": 2,
+      "guidance": "All three layers look correct.",
+      "highlight_piece_ids": [],
+      "audio_url": null,
+      "mock": false,
+      "status": "correct",
+      "advance_step": true
+    }
+  },
+  {
+    "photo": 2,
+    "expected": "incorrect",
+    "latency_seconds": 9.611,
+    "http_status": 200,
+    "response": {
+      "request_id": "3c26fc815fd740b8908e291404637ac5",
+      "step_index": 2,
+      "guidance": "All three layers look correct.",
+      "highlight_piece_ids": [],
+      "audio_url": null,
+      "mock": false,
+      "status": "correct",
+      "advance_step": true
+    }
+  },
+  {
+    "photo": 3,
+    "expected": "correct",
+    "latency_seconds": 9.519,
+    "http_status": 200,
+    "response": {
+      "request_id": "f3c36f276bb1459180aa29511b56aaaf",
+      "step_index": 2,
+      "guidance": "All three layers look correct.",
+      "highlight_piece_ids": [],
+      "audio_url": null,
+      "mock": false,
+      "status": "correct",
+      "advance_step": true
+    }
+  },
+  {
+    "photo": 4,
+    "expected": "correct",
+    "latency_seconds": 9.583,
+    "http_status": 200,
+    "response": {
+      "request_id": "de53ac46e0424e04b37f840420f2ca52",
+      "step_index": 2,
+      "guidance": "All three layers look correct.",
+      "highlight_piece_ids": [],
+      "audio_url": null,
+      "mock": false,
+      "status": "correct",
+      "advance_step": true
+    }
+  },
+  {
+    "photo": 5,
+    "expected": "incorrect",
+    "latency_seconds": 9.685,
+    "http_status": 200,
+    "response": {
+      "request_id": "d6269679d0334fe3a188298a911e10cf",
+      "step_index": 2,
+      "guidance": "All three layers look correct.",
+      "highlight_piece_ids": [],
+      "audio_url": null,
+      "mock": false,
+      "status": "correct",
+      "advance_step": true
+    }
+  }
+]

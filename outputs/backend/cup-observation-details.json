@@ -1,0 +1,483 @@
+[
+  {
+    "photo": 1,
+    "expected": "incorrect",
+    "latency_seconds": 23.178,
+    "http_status": 200,
+    "response": {
+      "request_id": "cc5aeab6cf8949d0a273ac43d0a09654",
+      "step_index": 2,
+      "guidance": "Turn the bottom left cup so its opening faces down. Turn the bottom center cup so its opening faces down.",
+      "highlight_piece_ids": [],
+      "audio_url": null,
+      "mock": false,
+      "status": "incorrect",
+      "advance_step": false
+    },
+    "extracted_observations": {
+      "scene": "physical",
+      "layer_visibility": {
+        "bottom": "full",
+        "middle": "full",
+        "top": "full"
+      },
+      "cups": [
+        {
+          "layer": "bottom",
+          "position": "left",
+          "opening": "up",
+          "visual_evidence": "open rim visible, interior visible above body, tapering sides",
+          "supported_by": [
+            "table"
+          ],
+          "support_evidence": "direct contact with wooden table surface"
+        },
+        {
+          "layer": "bottom",
+          "position": "center",
+          "opening": "up",
+          "visual_evidence": "open rim visible, interior visible above body, tapering sides",
+          "supported_by": [
+            "table"
+          ],
+          "support_evidence": "direct contact with wooden table surface"
+        },
+        {
+          "layer": "bottom",
+          "position": "right",
+          "opening": "up",
+          "visual_evidence": "open rim visible, interior visible above body, tapering sides",
+          "supported_by": [
+            "table"
+          ],
+          "support_evidence": "direct contact with wooden table surface"
+        },
+        {
+          "layer": "middle",
+          "position": "left",
+          "opening": "down",
+          "visual_evidence": "small closed base visible above flared open rim below",
+          "supported_by": [
+            "bottom_left",
+            "bottom_center"
+          ],
+          "support_evidence": "resting on rims of two bottom cups"
+        },
+        {
+          "layer": "middle",
+          "position": "right",
+          "opening": "down",
+          "visual_evidence": "small closed base visible above flared open rim below",
+          "supported_by": [
+            "bottom_center",
+            "bottom_right"
+          ],
+          "support_evidence": "resting on rims of two bottom cups"
+        },
+        {
+          "layer": "top",
+          "position": "center",
+          "opening": "up",
+          "visual_evidence": "open rim visible, interior visible above body, tapering sides",
+          "supported_by": [
+            "middle_left",
+            "middle_right"
+          ],
+          "support_evidence": "resting on rims of two middle cups"
+        }
+      ]
+    }
+  },
+  {
+    "photo": 2,
+    "expected": "incorrect",
+    "latency_seconds": 23.21,
+    "http_status": 200,
+    "response": {
+      "request_id": "3ed3240bffc1408da6a75c6f6675b33a",
+      "step_index": 2,
+      "guidance": "Turn the top center cup so its opening faces down.",
+      "highlight_piece_ids": [],
+      "audio_url": null,
+      "mock": false,
+      "status": "incorrect",
+      "advance_step": false
+    },
+    "extracted_observations": {
+      "scene": "physical",
+      "layer_visibility": {
+        "bottom": "full",
+        "middle": "full",
+        "top": "full"
+      },
+      "cups": [
+        {
+          "layer": "bottom",
+          "position": "left",
+          "opening": "down",
+          "visual_evidence": "The cup is inverted, with its flared rim resting on the table and its tapered base pointing up. The interior is not visible from this angle.",
+          "supported_by": [
+            "table"
+          ],
+          "support_evidence": "The cup's base is in direct contact with the wooden table surface."
+        },
+        {
+          "layer": "bottom",
+          "position": "center",
+          "opening": "down",
+          "visual_evidence": "The cup is inverted, with its flared rim resting on the table and its tapered base pointing up. The interior is not visible from this angle.",
+          "supported_by": [
+            "table"
+          ],
+          "support_evidence": "The cup's base is in direct contact with the wooden table surface."
+        },
+        {
+          "layer": "bottom",
+          "position": "right",
+          "opening": "down",
+          "visual_evidence": "The cup is inverted, with its flared rim resting on the table and its tapered base pointing up. The interior is not visible from this angle.",
+          "supported_by": [
+            "table"
+          ],
+          "support_evidence": "The cup's base is in direct contact with the wooden table surface."
+        },
+        {
+          "layer": "middle",
+          "position": "left",
+          "opening": "up",
+          "visual_evidence": "The cup is upright, with its flared rim visible at the top and its tapered base resting on the bottom layer. The interior is visible above the rim.",
+          "supported_by": [
+            "bottom_left",
+            "bottom_center"
+          ],
+          "support_evidence": "The cup's base is in contact with the rims of the two bottom-layer cups."
+        },
+        {
+          "layer": "middle",
+          "position": "right",
+          "opening": "up",
+          "visual_evidence": "The cup is upright, with its flared rim visible at the top and its tapered base resting on the bottom layer. The interior is visible above the rim.",
+          "supported_by": [
+            "bottom_center",
+            "bottom_right"
+          ],
+          "support_evidence": "The cup's base is in contact with the rims of the two bottom-layer cups."
+        },
+        {
+          "layer": "top",
+          "position": "center",
+          "opening": "up",
+          "visual_evidence": "The cup is upright, with its flared rim visible at the top and its tapered base resting on the middle layer. The interior is visible above the rim.",
+          "supported_by": [
+            "middle_left",
+            "middle_right"
+          ],
+          "support_evidence": "The cup's base is in contact with the rims of the two middle-layer cups."
+        }
+      ]
+    }
+  },
+  {
+    "photo": 3,
+    "expected": "correct",
+    "latency_seconds": 27.372,
+    "http_status": 200,
+    "response": {
+      "request_id": "47d1e6f9e74e4b28a0b07e413a26ff94",
+      "step_index": 2,
+      "guidance": "Turn the bottom left cup so its opening faces down. Turn the bottom center cup so its opening faces down. Other required observations remain uncertain.",
+      "highlight_piece_ids": [],
+      "audio_url": null,
+      "mock": false,
+      "status": "incorrect",
+      "advance_step": false
+    },
+    "extracted_observations": {
+      "scene": "physical",
+      "layer_visibility": {
+        "bottom": "full",
+        "middle": "full",
+        "top": "full"
+      },
+      "cups": [
+        {
+          "layer": "bottom",
+          "position": "left",
+          "opening": "up",
+          "visual_evidence": "The cup is inverted, showing its open rim and interior. The white base is visible on the wooden surface, and the red exterior is facing up.",
+          "supported_by": [
+            "table"
+          ],
+          "support_evidence": "The cup rests directly on the wooden table surface, with its white base clearly in contact with it."
+        },
+        {
+          "layer": "bottom",
+          "position": "center",
+          "opening": "up",
+          "visual_evidence": "The cup is inverted, showing its open rim and interior. The white base is visible on the wooden surface, and the red exterior is facing up.",
+          "supported_by": [
+            "table"
+          ],
+          "support_evidence": "The cup rests directly on the wooden table surface, with its white base clearly in contact with it."
+        },
+        {
+          "layer": "bottom",
+          "position": "right",
+          "opening": "up",
+          "visual_evidence": "The cup is inverted, showing its open rim and interior. The white base is visible on the wooden surface, and the red exterior is facing up.",
+          "supported_by": [
+            "table"
+          ],
+          "support_evidence": "The cup rests directly on the wooden table surface, with its white base clearly in contact with it."
+        },
+        {
+          "layer": "middle",
+          "position": "left",
+          "opening": "up",
+          "visual_evidence": "The cup is inverted, showing its open rim and interior. The white base is visible on the wooden surface, and the red exterior is facing up.",
+          "supported_by": [
+            "bottom_left",
+            "bottom_center"
+          ],
+          "support_evidence": "The cup is resting on the rims of the two bottom cups, visible as the white bases of the bottom cups are directly beneath it."
+        },
+        {
+          "layer": "middle",
+          "position": "center",
+          "opening": "up",
+          "visual_evidence": "The cup is inverted, showing its open rim and interior. The white base is visible on the wooden surface, and the red exterior is facing up.",
+          "supported_by": [
+            "bottom_center",
+            "bottom_right"
+          ],
+          "support_evidence": "The cup is resting on the rims of the two bottom cups, visible as the white bases of the bottom cups are directly beneath it."
+        },
+        {
+          "layer": "middle",
+          "position": "right",
+          "opening": "up",
+          "visual_evidence": "The cup is inverted, showing its open rim and interior. The white base is visible on the wooden surface, and the red exterior is facing up.",
+          "supported_by": [
+            "bottom_right",
+            "bottom_center"
+          ],
+          "support_evidence": "The cup is resting on the rims of the two bottom cups, visible as the white bases of the bottom cups are directly beneath it."
+        },
+        {
+          "layer": "top",
+          "position": "center",
+          "opening": "down",
+          "visual_evidence": "The cup is upright, showing its closed base. The open rim is not visible as it is covered by the cup above it. The red exterior is facing down.",
+          "supported_by": [
+            "middle_left",
+            "middle_center",
+            "middle_right"
+          ],
+          "support_evidence": "The cup is resting on the rims of the three middle cups, visible as the white bases of the middle cups are directly beneath it."
+        }
+      ]
+    }
+  },
+  {
+    "photo": 4,
+    "expected": "correct",
+    "latency_seconds": 29.981,
+    "http_status": 200,
+    "response": {
+      "request_id": "2659276e8188452e8f1928712f2e5509",
+      "step_index": 2,
+      "guidance": "Turn the bottom left cup so its opening faces down. Turn the bottom center cup so its opening faces down. Other required observations remain uncertain.",
+      "highlight_piece_ids": [],
+      "audio_url": null,
+      "mock": false,
+      "status": "incorrect",
+      "advance_step": false
+    },
+    "extracted_observations": {
+      "scene": "physical",
+      "layer_visibility": {
+        "bottom": "full",
+        "middle": "full",
+        "top": "full"
+      },
+      "cups": [
+        {
+          "layer": "bottom",
+          "position": "left",
+          "opening": "up",
+          "visual_evidence": "The cup is inverted, showing its open rim and interior. The white base is visible on the wooden surface, and the cup's tapered shape is clear from the bottom up.",
+          "supported_by": [
+            "table"
+          ],
+          "support_evidence": "The cup rests directly on the wooden table surface, with its white base clearly contacting it."
+        },
+        {
+          "layer": "bottom",
+          "position": "center",
+          "opening": "up",
+          "visual_evidence": "The cup is inverted, showing its open rim and interior. The white base is visible on the wooden surface, and the cup's tapered shape is clear from the bottom up.",
+          "supported_by": [
+            "table"
+          ],
+          "support_evidence": "The cup rests directly on the wooden table surface, with its white base clearly contacting it."
+        },
+        {
+          "layer": "bottom",
+          "position": "right",
+          "opening": "up",
+          "visual_evidence": "The cup is inverted, showing its open rim and interior. The white base is visible on the wooden surface, and the cup's tapered shape is clear from the bottom up.",
+          "supported_by": [
+            "table"
+          ],
+          "support_evidence": "The cup rests directly on the wooden table surface, with its white base clearly contacting it."
+        },
+        {
+          "layer": "middle",
+          "position": "left",
+          "opening": "up",
+          "visual_evidence": "The cup is upright, showing its open rim and interior. The white base is visible on the wooden surface, and the cup's tapered shape is clear from the bottom up.",
+          "supported_by": [
+            "bottom_left",
+            "bottom_center"
+          ],
+          "support_evidence": "The cup is resting on the rims of the two bottom cups, visible as contact points between the middle cup's base and the bottom cups' rims."
+        },
+        {
+          "layer": "middle",
+          "position": "center",
+          "opening": "up",
+          "visual_evidence": "The cup is upright, showing its open rim and interior. The white base is visible on the wooden surface, and the cup's tapered shape is clear from the bottom up.",
+          "supported_by": [
+            "bottom_center",
+            "bottom_right"
+          ],
+          "support_evidence": "The cup is resting on the rims of the two bottom cups, visible as contact points between the middle cup's base and the bottom cups' rims."
+        },
+        {
+          "layer": "middle",
+          "position": "right",
+          "opening": "up",
+          "visual_evidence": "The cup is upright, showing its open rim and interior. The white base is visible on the wooden surface, and the cup's tapered shape is clear from the bottom up.",
+          "supported_by": [
+            "bottom_right",
+            "bottom_left"
+          ],
+          "support_evidence": "The cup is resting on the rims of the two bottom cups, visible as contact points between the middle cup's base and the bottom cups' rims."
+        },
+        {
+          "layer": "top",
+          "position": "center",
+          "opening": "down",
+          "visual_evidence": "The cup is inverted, showing its closed base and tapering sides. The open rim is not visible as it is covered by the middle layer cups.",
+          "supported_by": [
+            "middle_left",
+            "middle_center",
+            "middle_right"
+          ],
+          "support_evidence": "The cup is resting on the rims of the three middle cups, visible as contact points between the top cup's base and the middle cups' rims."
+        }
+      ]
+    }
+  },
+  {
+    "photo": 5,
+    "expected": "incorrect",
+    "latency_seconds": 23.592,
+    "http_status": 200,
+    "response": {
+      "request_id": "66bd6b82d1604e5d9b69980fe743d424",
+      "step_index": 2,
+      "guidance": "Turn the bottom left cup so its opening faces down. Turn the bottom center cup so its opening faces down. Other required observations remain uncertain.",
+      "highlight_piece_ids": [],
+      "audio_url": null,
+      "mock": false,
+      "status": "incorrect",
+      "advance_step": false
+    },
+    "extracted_observations": {
+      "scene": "physical",
+      "layer_visibility": {
+        "bottom": "full",
+        "middle": "full",
+        "top": "full"
+      },
+      "cups": [
+        {
+          "layer": "bottom",
+          "position": "left",
+          "opening": "up",
+          "visual_evidence": "open rim visible, interior visible above body, cup body flares outward at rim",
+          "supported_by": [
+            "table"
+          ],
+          "support_evidence": "cup base rests on wooden table surface"
+        },
+        {
+          "layer": "bottom",
+          "position": "center",
+          "opening": "up",
+          "visual_evidence": "open rim visible, interior visible above body, cup body flares outward at rim",
+          "supported_by": [
+            "table"
+          ],
+          "support_evidence": "cup base rests on wooden table surface"
+        },
+        {
+          "layer": "bottom",
+          "position": "right",
+          "opening": "up",
+          "visual_evidence": "open rim visible, interior visible above body, cup body flares outward at rim",
+          "supported_by": [
+            "table"
+          ],
+          "support_evidence": "cup base rests on wooden table surface"
+        },
+        {
+          "layer": "middle",
+          "position": "left",
+          "opening": "down",
+          "visual_evidence": "small closed base visible above flared open rim below, cup body tapers inward",
+          "supported_by": [
+            "bottom_left",
+            "bottom_center"
+          ],
+          "support_evidence": "cup base rests on top of two bottom cups"
+        },
+        {
+          "layer": "middle",
+          "position": "center",
+          "opening": "down",
+          "visual_evidence": "small closed base visible above flared open rim below, cup body tapers inward",
+          "supported_by": [
+            "bottom_center",
+            "bottom_right"
+          ],
+          "support_evidence": "cup base rests on top of two bottom cups"
+        },
+        {
+          "layer": "middle",
+          "position": "right",
+          "opening": "down",
+          "visual_evidence": "small closed base visible above flared open rim below, cup body tapers inward",
+          "supported_by": [
+            "bottom_left",
+            "bottom_right"
+          ],
+          "support_evidence": "cup base rests on top of two bottom cups"
+        },
+        {
+          "layer": "top",
+          "position": "center",
+          "opening": "up",
+          "visual_evidence": "open rim visible, interior visible above body, cup body flares outward at rim",
+          "supported_by": [
+            "middle_left",
+            "middle_center",
+            "middle_right"
+          ],
+          "support_evidence": "cup base rests on top of three middle cups"
+        }
+      ]
+    }
+  }
+]

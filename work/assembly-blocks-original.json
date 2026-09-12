@@ -1,0 +1,12 @@
+{
+  "instruction_id": "assembly-1",
+  "title": "Five-block demonstration (provisional context)",
+  "note": "Example semantic labels only. Confirm colors/order with Unity before a physical demonstration. Unity owns target poses, placement checks and progression.",
+  "pieces": [
+    {"id": "block-1", "color": "red", "instruction": "Place the red first block and confirm the assembly anchor in Unity."},
+    {"id": "block-2", "color": "blue", "instruction": "Place the blue block at Unity's current ghost target."},
+    {"id": "block-3", "color": "yellow", "instruction": "Place the yellow block at Unity's current ghost target."},
+    {"id": "block-4", "color": "green", "instruction": "Place the green block at Unity's current ghost target."},
+    {"id": "block-5", "color": "orange", "instruction": "Place the orange block at Unity's current ghost target."}
+  ]
+}

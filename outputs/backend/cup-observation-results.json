@@ -1,0 +1,82 @@
+[
+  {
+    "photo": 1,
+    "expected": "incorrect",
+    "latency_seconds": 23.178,
+    "http_status": 200,
+    "response": {
+      "request_id": "cc5aeab6cf8949d0a273ac43d0a09654",
+      "step_index": 2,
+      "guidance": "Turn the bottom left cup so its opening faces down. Turn the bottom center cup so its opening faces down.",
+      "highlight_piece_ids": [],
+      "audio_url": null,
+      "mock": false,
+      "status": "incorrect",
+      "advance_step": false
+    }
+  },
+  {
+    "photo": 2,
+    "expected": "incorrect",
+    "latency_seconds": 23.21,
+    "http_status": 200,
+    "response": {
+      "request_id": "3ed3240bffc1408da6a75c6f6675b33a",
+      "step_index": 2,
+      "guidance": "Turn the top center cup so its opening faces down.",
+      "highlight_piece_ids": [],
+      "audio_url": null,
+      "mock": false,
+      "status": "incorrect",
+      "advance_step": false
+    }
+  },
+  {
+    "photo": 3,
+    "expected": "correct",
+    "latency_seconds": 27.372,
+    "http_status": 200,
+    "response": {
+      "request_id": "47d1e6f9e74e4b28a0b07e413a26ff94",
+      "step_index": 2,
+      "guidance": "Turn the bottom left cup so its opening faces down. Turn the bottom center cup so its opening faces down. Other required observations remain uncertain.",
+      "highlight_piece_ids": [],
+      "audio_url": null,
+      "mock": false,
+      "status": "incorrect",
+      "advance_step": false
+    }
+  },
+  {
+    "photo": 4,
+    "expected": "correct",
+    "latency_seconds": 29.981,
+    "http_status": 200,
+    "response": {
+      "request_id": "2659276e8188452e8f1928712f2e5509",
+      "step_index": 2,
+      "guidance": "Turn the bottom left cup so its opening faces down. Turn the bottom center cup so its opening faces down. Other required observations remain uncertain.",
+      "highlight_piece_ids": [],
+      "audio_url": null,
+      "mock": false,
+      "status": "incorrect",
+      "advance_step": false
+    }
+  },
+  {
+    "photo": 5,
+    "expected": "incorrect",
+    "latency_seconds": 23.592,
+    "http_status": 200,
+    "response": {
+      "request_id": "66bd6b82d1604e5d9b69980fe743d424",
+      "step_index": 2,
+      "guidance": "Turn the bottom left cup so its opening faces down. Turn the bottom center cup so its opening faces down. Other required observations remain uncertain.",
+      "highlight_piece_ids": [],
+      "audio_url": null,
+      "mock": false,
+      "status": "incorrect",
+      "advance_step": false
+    }
+  }
+]

@@ -1,0 +1,109 @@
+{
+  "_id": "6aa58ec440174d9453e95a77",
+  "instruction_id": "assembly-1",
+  "version": 1,
+  "name": "Six-cup assembly",
+  "description": "Six interchangeable cups in three layers. IDs identify assembly slots, not physical cup identities.",
+  "objects": [
+    {
+      "slot_id": "bottom_left",
+      "object_type": "cup",
+      "step_index": 0,
+      "required_opening_direction": "down",
+      "supporting_slot_ids": [
+        "table"
+      ],
+      "placement_instructions": "Place a cup in bottom left with its opening facing down, supported by table."
+    },
+    {
+      "slot_id": "bottom_center",
+      "object_type": "cup",
+      "step_index": 0,
+      "required_opening_direction": "down",
+      "supporting_slot_ids": [
+        "table"
+      ],
+      "placement_instructions": "Place a cup in bottom center with its opening facing down, supported by table."
+    },
+    {
+      "slot_id": "bottom_right",
+      "object_type": "cup",
+      "step_index": 0,
+      "required_opening_direction": "down",
+      "supporting_slot_ids": [
+        "table"
+      ],
+      "placement_instructions": "Place a cup in bottom right with its opening facing down, supported by table."
+    },
+    {
+      "slot_id": "middle_left",
+      "object_type": "cup",
+      "step_index": 1,
+      "required_opening_direction": "up",
+      "supporting_slot_ids": [
+        "bottom_left",
+        "bottom_center"
+      ],
+      "placement_instructions": "Place a cup in middle left with its opening facing up, supported by bottom_left and bottom_center."
+    },
+    {
+      "slot_id": "middle_right",
+      "object_type": "cup",
+      "step_index": 1,
+      "required_opening_direction": "up",
+      "supporting_slot_ids": [
+        "bottom_center",
+        "bottom_right"
+      ],
+      "placement_instructions": "Place a cup in middle right with its opening facing up, supported by bottom_center and bottom_right."
+    },
+    {
+      "slot_id": "top_center",
+      "object_type": "cup",
+      "step_index": 2,
+      "required_opening_direction": "down",
+      "supporting_slot_ids": [
+        "middle_left",
+        "middle_right"
+      ],
+      "placement_instructions": "Place a cup in top center with its opening facing down, supported by middle_left and middle_right."
+    }
+  ],
+  "steps": [
+    {
+      "step_index": 0,
+      "instructions": "Place three bottom cups with openings facing down on the table.",
+      "required_slot_ids": [
+        "bottom_left",
+        "bottom_center",
+        "bottom_right"
+      ],
+      "target_image_path": null
+    },
+    {
+      "step_index": 1,
+      "instructions": "Keep the bottom layer and add two cups with openings facing up, each bridging adjacent bottom cups.",
+      "required_slot_ids": [
+        "bottom_left",
+        "bottom_center",
+        "bottom_right",
+        "middle_left",
+        "middle_right"
+      ],
+      "target_image_path": null
+    },
+    {
+      "step_index": 2,
+      "instructions": "Keep both earlier layers and add one top cup with its opening facing down, bridging both middle cups.",
+      "required_slot_ids": [
+        "bottom_left",
+        "bottom_center",
+        "bottom_right",
+        "middle_left",
+        "middle_right",
+        "top_center"
+      ],
+      "target_image_path": null
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+HTTP round-trip latency: 4.727 seconds
+{
+  "request_id": "test-request-1",
+  "step_index": 0,
+  "guidance": "Uncertain: the image does not establish clear physical placement; rendered targets are not physical blocks. You're viewing a GitHub repository page, not a physical building block setup. Unity must validate placement. Confirm the red block's position in Unity before proceeding.",
+  "highlight_piece_ids": [],
+  "audio_url": null,
+  "mock": false
+}

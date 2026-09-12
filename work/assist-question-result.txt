@@ -1,0 +1,9 @@
+HTTP round-trip latency: 1.623 seconds
+{
+  "request_id": "test-request-1",
+  "step_index": 0,
+  "guidance": "Uncertain: the image does not establish clear physical placement; rendered targets are not physical blocks. This is a screen view, not a physical build. You cannot place real blocks here. Use Unity to confirm placement and anchor positions.",
+  "highlight_piece_ids": [],
+  "audio_url": null,
+  "mock": false
+}

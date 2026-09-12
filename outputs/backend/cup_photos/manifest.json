@@ -1,0 +1,36 @@
+{
+  "reference": "reference.png",
+  "reference_photo": 3,
+  "photos": [
+    {
+      "photo": 1,
+      "file": "photo-1.png",
+      "sha256": "1a16b8d78710b43368d3d10779cb30ce0f0306eb8692380f911f0d16fead19fe",
+      "human_inspection": "incorrect: bottom up, middle down, top up (all reversed)"
+    },
+    {
+      "photo": 2,
+      "file": "photo-2.png",
+      "sha256": "e3105e6681790e195a5e6a1a6fdf792d97b8077fb36a89137c0c414185647148",
+      "human_inspection": "incorrect: middle down; bottom and top down"
+    },
+    {
+      "photo": 3,
+      "file": "photo-3.png",
+      "sha256": "828b42b27bab46a8097a97031f95190f030b971e122cd6ec0d295396e3912cde",
+      "human_inspection": "correct: bottom down, middle up, top down"
+    },
+    {
+      "photo": 4,
+      "file": "photo-4.png",
+      "sha256": "dacee7e2a61cc2ebeb7d812ebd36efeb375a9e30a9fcbcfefa5a4dee21a0b23f",
+      "human_inspection": "appears correct alternate view: bottom down, middle up, top down"
+    },
+    {
+      "photo": 5,
+      "file": "photo-5.png",
+      "sha256": "2ef032cb15359ff87e6529789ee6f28a40527476f9fd48988d9522ba555154e4",
+      "human_inspection": "incorrect: bottom up, middle down, top up (all reversed)"
+    }
+  ]
+}

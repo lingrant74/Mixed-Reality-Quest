@@ -1,0 +1,9 @@
+HTTP round-trip latency: 0.051 seconds
+{
+  "request_id": "test-request-1",
+  "step_index": 0,
+  "guidance": "Mock guidance: follow the current assembly instruction and place the next piece in the highlighted target.",
+  "highlight_piece_ids": [],
+  "audio_url": null,
+  "mock": true
+}

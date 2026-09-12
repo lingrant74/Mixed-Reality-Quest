@@ -1,0 +1,26 @@
+# Local Python virtual environments
+work/backend-venv/
+outputs/backend/.venv/
+__pycache__/
+*.pyc
+
+# Downloaded/installed local runtime dependencies (regenerate via README/MONGODB_SETUP/VISION_SETUP)
+work/mongodb-runtime/
+work/mongodb-server.deb
+work/mongodb-package.json
+work/mongodb-packages.gz
+work/node-runtime/
+work/node-bin-path
+work/ollama-runtime/
+work/ollama-models/
+work/ollama-linux-arm64.tar.zst
+
+# Live database files and server/process state (machine-specific, regenerated at runtime)
+work/mongodb-data/
+
+# Runtime logs
+work/*.log
+*.log
+
+# User-uploaded dashboard assets (runtime storage, not source)
+work/dashboard-assets/
